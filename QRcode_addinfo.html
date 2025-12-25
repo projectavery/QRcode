@@ -67,7 +67,6 @@
         th { background: var(--primary-color); color: white; padding: 10px; font-size: 14px; }
         td { padding: 10px; border-bottom: 1px solid #eee; text-align: center; font-size: 14px; }
 
-        /* 彈窗樣式 */
         .modal {
             display: none; position: fixed; z-index: 2000;
             left: 0; top: 0; width: 100%; height: 100%;
@@ -89,7 +88,7 @@
 </head>
 <body>
 
-    <h2>🎟️ 抽獎核銷與進度系統</h2>
+    <h2>🎁 抽獎核銷與進度系統</h2>
     
     <div id="reader"></div>
 
@@ -102,7 +101,7 @@
             <button class="btn-progress" onclick="handleAction('progress')">📊 查看全體領獎進度</button>
         </div>
         
-        <button id="updateConfirmBtn" class="btn-update" onclick="openModal()">✅ 確認領獎 (填寫資料)</button>
+        <button id="updateConfirmBtn" class="btn-update" onclick="preSubmitCheck()">✅ 確認領獎</button>
         
         <div id="status">準備就緒</div>
         <div id="displayArea"></div>
@@ -137,7 +136,7 @@
             </div>
             <div class="btn-group">
                 <button onclick="closeModal()" style="background:#bdc3c7; color:white;">取消</button>
-                <button id="finalSubmitBtn" onclick="submitRewardData()" style="background:var(--success-color); color:white;">確認送出</button>
+                <button id="finalSubmitBtn" onclick="submitRewardData(true)" style="background:var(--success-color); color:white;">確認送出</button>
             </div>
         </div>
     </div>
@@ -146,8 +145,8 @@
         const WEBHOOK_URL = 'https://projectboy-n8n-free.hf.space/webhook/new_bingo';
         // const WEBHOOK_URL = 'https://buck-decent-bobcat.ngrok-free.app/webhook/new_bingo';
         let html5QrCode;
+        let currentNote = ""; // 用於存放查詢到的備註
 
-        // --- 縣市資料庫 ---
         const cityData = {
             "基隆市": ["仁愛區", "信義區", "中正區", "中山區", "安樂區", "暖暖區", "七堵區"],
             "台北市": ["中正區", "萬華區", "大同區", "中山區", "松山區", "大安區", "信義區", "內湖區", "南港區", "士林區", "北投區", "文山區"],
@@ -200,7 +199,6 @@
         function openModal() { document.getElementById('rewardModal').style.display = 'block'; }
         function closeModal() { document.getElementById('rewardModal').style.display = 'none'; }
 
-        // --- 清除資料函式 ---
         function resetRewardForm() {
             document.getElementById('userName').value = "";
             document.getElementById('userPhone').value = "";
@@ -208,7 +206,8 @@
             document.getElementById('userCity').value = "";
             document.getElementById('userDistrict').innerHTML = '<option value="">選擇區域</option>';
             document.getElementById('userAddress').value = "";
-            document.getElementById('scannedResult').value = ""; // 核銷完成後通常編號也會清掉
+            document.getElementById('scannedResult').value = "";
+            currentNote = ""; // 清除暫存備註
         }
 
         async function startScanner() {
@@ -266,10 +265,14 @@
                     displayArea.innerHTML = content;
                     status.innerText = "查詢完成";
                     updateBtn.style.display = 'block';
+                    
+                    // 暫存備註資訊供後續判斷
+                    currentNote = content;
+
                     if (content.includes("ALREADY_CLAIMED") || content.includes("此獎項已領取")) {
                         updateBtn.disabled = true; updateBtn.innerText = "🚫 已領獎";
                     } else if (content.includes("恭喜中獎")) {
-                        updateBtn.disabled = false; updateBtn.innerText = "✅ 確認領獎 (填寫資料)";
+                        updateBtn.disabled = false; updateBtn.innerText = "✅ 確認領獎";
                     } else {
                         updateBtn.disabled = true; updateBtn.innerText = "❌ 未中獎";
                     }
@@ -281,50 +284,72 @@
             }
         }
 
-        async function submitRewardData() {
+        // --- 新增：判斷是否需要開啟彈窗 ---
+        function preSubmitCheck() {
+            // 判斷查詢內容中是否包含 "需身分證"
+            if (currentNote.includes("需身分證")) {
+                openModal();
+            } else {
+                // 如果沒有，直接回傳給 n8n (不帶 userInfo)
+                if (confirm("此獎項不需身分證，確認立即領獎？")) {
+                    submitRewardData(false);
+                }
+            }
+        }
+
+        // 修改：增加 hasUserInfo 參數
+        async function submitRewardData(hasUserInfo) {
             const idValue = document.getElementById('scannedResult').value;
             const submitBtn = document.getElementById('finalSubmitBtn');
+            const updateBtn = document.getElementById('updateConfirmBtn');
             
-            const userData = {
-                name: document.getElementById('userName').value.trim(),
-                phone: document.getElementById('userPhone').value.trim(),
-                idCard: document.getElementById('userIdCard').value.trim(),
-                city: document.getElementById('userCity').value,
-                district: document.getElementById('userDistrict').value,
-                address: document.getElementById('userAddress').value.trim()
+            let payload = { 
+                action: 'updata', 
+                id: idValue 
             };
 
-            if (!userData.name || !userData.phone || !userData.idCard || !userData.city || !userData.district || !userData.address) {
-                alert("請完整填寫所有欄位！"); return;
-            }
-            if (!/^09\d{8}$/.test(userData.phone)) {
-                alert("手機格式不正確"); return;
-            }
-            if (!/^[A-Z][1-2]\d{8}$/.test(userData.idCard)) {
-                alert("身分證格式不正確"); return;
+            if (hasUserInfo) {
+                const userData = {
+                    name: document.getElementById('userName').value.trim(),
+                    phone: document.getElementById('userPhone').value.trim(),
+                    idCard: document.getElementById('userIdCard').value.trim(),
+                    city: document.getElementById('userCity').value,
+                    district: document.getElementById('userDistrict').value,
+                    address: document.getElementById('userAddress').value.trim()
+                };
+
+                if (!userData.name || !userData.phone || !userData.idCard || !userData.city || !userData.district || !userData.address) {
+                    alert("請完整填寫所有欄位！"); return;
+                }
+                if (!/^09\d{8}$/.test(userData.phone)) {
+                    alert("手機格式不正確"); return;
+                }
+                if (!/^[A-Z][1-2]\d{8}$/.test(userData.idCard)) {
+                    alert("身分證格式不正確"); return;
+                }
+                payload.userInfo = userData;
             }
 
-            submitBtn.disabled = true;
-            submitBtn.innerText = "傳送中...";
+            // 停用按鈕防止重複點擊
+            if(hasUserInfo) {
+                submitBtn.disabled = true;
+                submitBtn.innerText = "傳送中...";
+            } else {
+                updateBtn.disabled = true;
+                updateBtn.innerText = "處理中...";
+            }
 
             try {
                 const response = await fetch(WEBHOOK_URL, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ 
-                        action: 'updata', 
-                        id: idValue,
-                        userInfo: userData 
-                    })
+                    body: JSON.stringify(payload)
                 });
 
                 if (response.ok) {
-                    alert("✅ 領獎資料核銷成功！");
-                    
-                    // --- 成功後的關鍵步驟：清除資料 ---
+                    alert("✅ 領獎核銷成功！");
                     resetRewardForm(); 
-                    
-                    closeModal();
+                    if(hasUserInfo) closeModal();
                     document.getElementById('updateConfirmBtn').style.display = 'none';
                     document.getElementById('status').innerText = "狀態：已完成核銷";
                     document.getElementById('displayArea').innerHTML = "<h3>✅ 核銷成功！</h3>";
@@ -338,5 +363,4 @@
         }
     </script>
 </body>
-
 </html>
