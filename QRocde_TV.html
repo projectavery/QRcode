@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>幸運中獎名單看板 - 12格版</title>
+    <title>幸運中獎名單看板 - 依序撥放版</title>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.3.2/papaparse.min.js"></script>
     <style>
         :root {
@@ -70,11 +70,10 @@
             font-weight: bold;
         }
 
-        /* 12格矩陣設定 */
         .numbers-grid {
             display: grid;
-            grid-template-columns: repeat(4, 1fr); /* 4欄 */
-            grid-template-rows: repeat(3, 1fr);    /* 3列 */
+            grid-template-columns: repeat(4, 1fr);
+            grid-template-rows: repeat(3, 1fr);
             gap: 15px;
             margin-bottom: 30px;
         }
@@ -111,29 +110,27 @@
 
 <script>
     const targetUrl = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vSkwZLmao8afS8265szRVJHa3s6tFRcS2pEc51_9k92ZS4VmYugFodOfaSYHY8xCSf_5xxwrJf5Epob/pub?gid=31666847&single=true&output=csv';
-    
-    // 備援代理 (當直連失敗時使用)
     const backupProxy = 'https://api.allorigins.win/raw?url=' + encodeURIComponent(targetUrl);
+
+    // 定義獎項排序權重
+    const PRIZE_ORDER = ["特別獎", "頭獎", "二獎", "三獎", "四獎", "五獎", "六獎", "七獎", "八獎", "九獎", "十獎", "十一獎", "十二獎", "十三獎", "十四獎", "十五獎", "十六獎", "十七獎", "十八獎", "十九獎", "二十獎", "二十一獎", "二十二獎"];
 
     let groupedData = [];
     let currentIndex = 0;
 
-    // 核心資料讀取邏輯
     async function loadData() {
         try {
-            console.log("嘗試直接連線 Google Sheets...");
             const response = await fetch(targetUrl, { cache: "no-cache" });
             if (!response.ok) throw new Error('直連受阻');
             const csvText = await response.text();
             parseAndProcess(csvText);
         } catch (err) {
-            console.warn("直連失敗，啟用備援代理模式...");
             try {
                 const proxyRes = await fetch(backupProxy);
                 const proxyText = await proxyRes.text();
                 parseAndProcess(proxyText);
             } catch (proxyErr) {
-                console.error("所有連線路徑皆失敗");
+                console.error("連線失敗");
             }
         }
     }
@@ -168,10 +165,21 @@
             if (item['摸彩卷號碼']) dictionary[key].allNumbers.push(item['摸彩卷號碼']);
         });
 
+        // 依照 PRIZE_ORDER 進行排序
+        const sortedKeys = Object.keys(dictionary).sort((a, b) => {
+            const indexA = PRIZE_ORDER.indexOf(dictionary[a].rank);
+            const indexB = PRIZE_ORDER.indexOf(dictionary[b].rank);
+            
+            // 如果獎項不在定義名單中，則排在最後面
+            const weightA = indexA === -1 ? 999 : indexA;
+            const weightB = indexB === -1 ? 999 : indexB;
+            
+            return weightA - weightB;
+        });
+
         const finalGroups = [];
-        Object.keys(dictionary).forEach(key => {
+        sortedKeys.forEach(key => {
             const data = dictionary[key];
-            // 分割成每頁 12 個
             for (let i = 0; i < data.allNumbers.length; i += 12) {
                 finalGroups.push({
                     ...data,
@@ -181,6 +189,8 @@
         });
 
         if (finalGroups.length > 0) {
+            // 資料更新時，若原本位置超過新長度，重置回 0
+            if (currentIndex >= finalGroups.length) currentIndex = 0;
             groupedData = finalGroups;
             renderDisplay();
         }
@@ -213,10 +223,9 @@
         }, 600);
     }
 
-    // 啟動程序
     loadData();
-    setInterval(renderDisplay, 10000); // 10秒輪播
-    setInterval(loadData, 60000);      // 1分鐘同步雲端
+    setInterval(renderDisplay, 10000); 
+    setInterval(loadData, 60000); 
 </script>
 
 </body>
