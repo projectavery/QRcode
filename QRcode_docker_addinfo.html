@@ -297,6 +297,19 @@
             }
         }
 
+        // --- 新增：判斷是否需要開啟彈窗 ---
+        function preSubmitCheck() {
+            // 判斷查詢內容中是否包含 "需身分證"
+            if (currentNote.includes("需身分證")) {
+                openModal();
+            } else {
+                // 如果沒有，直接回傳給 n8n (不帶 userInfo)
+                if (confirm("此獎項不需身分證，確認立即領獎？")) {
+                    submitRewardData(false);
+                }
+            }
+        }
+        
         async function submitRewardData() {
             const idValue = document.getElementById('scannedResult').value;
             const submitBtn = document.getElementById('finalSubmitBtn');
@@ -355,3 +368,4 @@
     </script>
 </body>
 </html>
+
