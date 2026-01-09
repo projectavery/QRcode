@@ -123,7 +123,7 @@
                 <input type="text" id="userIdCard" placeholder="例如: A123456789">
             </div>
             <div class="form-group">
-                <label>通訊地址</label>
+                <label>戶籍地址</label>
                 <div class="address-row">
                     <select id="userCity" onchange="updateDistricts()">
                         <option value="">選擇縣市</option>
@@ -172,6 +172,7 @@
             "連江縣": ["南竿鄉", "北竿鄉", "莒光鄉", "東引鄉"]
         };
 
+        // 初始化縣市選單並預設為新北市土城區
         window.onload = () => {
             const citySelect = document.getElementById('userCity');
             for (let city in cityData) {
@@ -180,7 +181,21 @@
                 opt.innerHTML = city;
                 citySelect.appendChild(opt);
             }
+            setDefaultLocation();
         };
+
+        // 設定預設位置的邏輯
+        function setDefaultLocation() {
+            const citySelect = document.getElementById('userCity');
+            const defaultCity = "新北市";
+            const defaultDistrict = "土城區";
+
+            if (cityData[defaultCity]) {
+                citySelect.value = defaultCity;
+                updateDistricts();
+                document.getElementById('userDistrict').value = defaultDistrict;
+            }
+        }
 
         function updateDistricts() {
             const city = document.getElementById('userCity').value;
@@ -199,17 +214,19 @@
         function openModal() { document.getElementById('rewardModal').style.display = 'block'; }
         function closeModal() { document.getElementById('rewardModal').style.display = 'none'; }
 
+        // 修改：重置後也要維持預設地點
         function resetRewardForm() {
             document.getElementById('userName').value = "";
             document.getElementById('userPhone').value = "";
             document.getElementById('userIdCard').value = "";
-            document.getElementById('userCity').value = "";
-            document.getElementById('userDistrict').innerHTML = '<option value="">選擇區域</option>';
             document.getElementById('userAddress').value = "";
             document.getElementById('scannedResult').value = "";
-            currentNote = ""; // 清除暫存備註
+            currentNote = ""; 
+            
+            // 呼叫預設位置設定
+            setDefaultLocation();
         }
-
+        
         async function startScanner() {
             document.getElementById('scannedResult').value = "";
             document.getElementById('displayArea').innerHTML = "";
