@@ -72,7 +72,7 @@
 
         .numbers-grid {
             display: grid;
-            grid-template-columns: repeat(4, 1fr);
+            grid-template-columns: repeat(5, 1fr);
             grid-template-rows: repeat(3, 1fr);
             gap: 15px;
             margin-bottom: 30px;
@@ -180,10 +180,10 @@
         const finalGroups = [];
         sortedKeys.forEach(key => {
             const data = dictionary[key];
-            for (let i = 0; i < data.allNumbers.length; i += 12) {
+            for (let i = 0; i < data.allNumbers.length; i += 15) {
                 finalGroups.push({
                     ...data,
-                    numbers: data.allNumbers.slice(i, i + 12)
+                    numbers: data.allNumbers.slice(i, i + 15)
                 });
             }
         });
@@ -230,3 +230,4 @@
 
 </body>
 </html>
+
