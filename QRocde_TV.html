@@ -9,13 +9,12 @@
         :root {
             --warm-red: #8e1b1b;
             --gold-gradient: linear-gradient(135deg, #d4af37 0%, #f9e29c 50%, #b8860b 100%);
-            --highlight-gold: #ffeb3b; /* 極亮黃色用於備註 */
+            --highlight-gold: #ffeb3b;
             --bg-dark: #1a1616;
             --card-bg: rgba(45, 38, 38, 0.95);
         }
 
         body {
-            /* 設定全域字體為標楷體 */
             font-family: "DFKai-SB", "標楷體", "BiauKai", serif;
             background-color: var(--bg-dark);
             background-image: radial-gradient(circle at center, #3d2b2b 0%, #1a1616 100%);
@@ -29,22 +28,22 @@
         }
 
         #main-container {
-            width: 90%;
+            width: 92%;
             max-width: 1300px;
+            min-height: 70vh; /* 確保高度一致，切換時不跳動 */
             background: var(--card-bg);
-            padding: 50px;
+            padding: 40px 50px;
             border-radius: 40px;
             box-shadow: 0 40px 100px rgba(0,0,0,0.8), inset 0 0 20px rgba(212, 175, 55, 0.1);
             border: 1px solid rgba(212, 175, 55, 0.2);
             text-align: center;
             position: relative;
-            transform: translateY(0);
-            transition: all 0.6s cubic-bezier(0.23, 1, 0.32, 1);
+            transition: opacity 0.6s ease, transform 0.6s ease;
         }
 
         #main-container.hidden {
             opacity: 0;
-            transform: translateY(20px);
+            transform: translateY(10px);
         }
 
         /* 頂部裝飾條 */
@@ -66,59 +65,58 @@
             color: #fff;
             padding: 8px 35px;
             border-radius: 100px;
-            font-size: 1.6rem;
+            font-size: 1.5rem;
             font-weight: bold;
             letter-spacing: 3px;
             box-shadow: 0 4px 15px rgba(142, 27, 27, 0.4);
-            margin-bottom: 20px;
+            margin-bottom: 15px;
         }
 
         .prize-rank {
-            font-size: 4.2rem;
+            font-size: clamp(2.5rem, 8vw, 4.2rem); /* 響應式字體 */
             font-weight: bold;
             background: var(--gold-gradient);
             -webkit-background-clip: text;
             -webkit-text-fill-color: transparent;
-            margin: 10px 0;
+            margin: 5px 0;
             filter: drop-shadow(0 2px 4px rgba(0,0,0,0.3));
         }
 
         .prize-content {
-            font-size: 2.2rem;
+            font-size: clamp(1.5rem, 4vw, 2.2rem);
             color: #e0d0d0;
-            margin-bottom: 35px;
+            margin-bottom: 30px;
             font-weight: bold;
         }
 
         .numbers-grid {
             display: grid;
             grid-template-columns: repeat(4, 1fr);
-            gap: 25px;
-            margin-bottom: 45px;
+            gap: 20px;
+            margin-bottom: 35px;
         }
 
         .ticket-no {
-            font-size: 3rem;
+            font-size: clamp(1.8rem, 5vw, 3rem);
             font-weight: bold;
             color: #fff;
             background: linear-gradient(180deg, rgba(70, 50, 50, 1) 0%, rgba(30, 25, 25, 1) 100%);
-            padding: 18px 5px;
+            padding: 15px 5px;
             border-radius: 15px;
             border: 2px solid rgba(212, 175, 55, 0.5);
             box-shadow: 0 8px 20px rgba(0,0,0,0.5);
-            letter-spacing: 4px;
+            letter-spacing: 2px;
         }
 
         .footer-info {
             display: flex;
             justify-content: space-between;
             align-items: center;
-            border-top: 2px solid rgba(255,255,255,0.1);
-            padding-top: 25px;
-            font-size: 1.4rem;
+            border-top: 1px solid rgba(255,255,255,0.1);
+            padding-top: 20px;
+            font-size: 1.3rem;
         }
 
-        /* 備註欄位調亮 */
         .remark-text {
             color: var(--highlight-gold);
             font-weight: bold;
@@ -130,7 +128,7 @@
             font-size: 1.1rem;
         }
 
-        .loading { font-size: 2rem; color: #d4af37; }
+        .loading { font-size: 2rem; color: #d4af37; padding: 100px; }
     </style>
 </head>
 <body>
@@ -147,6 +145,7 @@
 
     let groupedData = [];
     let currentIndex = 0;
+    let isInitialLoad = true;
 
     async function loadData() {
         try {
@@ -162,7 +161,10 @@
                 }
             });
         } catch (err) {
-            document.getElementById('main-container').innerHTML = `<div class="loading">資料同步中，請稍候...</div>`;
+            console.error("資料獲取錯誤:", err);
+            if (isInitialLoad) {
+                document.getElementById('main-container').innerHTML = `<div class="loading">目前無法連線至資料庫，請檢查網路。</div>`;
+            }
         }
     }
 
@@ -172,6 +174,8 @@
         rawData.forEach((item) => {
             const prizeName = (item['獎次'] || '').trim();
             const prizeContent = (item['獎品內容'] || '').trim();
+            if (!prizeName) return; // 跳過空行
+
             const key = prizeName + prizeContent;
 
             if (!dictionary[key]) {
@@ -183,7 +187,9 @@
                     allNumbers: []
                 };
             }
-            dictionary[key].allNumbers.push(item['摸彩卷號碼']);
+            if (item['摸彩卷號碼']) {
+                dictionary[key].allNumbers.push(item['摸彩卷號碼']);
+            }
         });
 
         const sortedKeys = Object.keys(dictionary).sort((a, b) => {
@@ -197,6 +203,7 @@
         const finalGroups = [];
         sortedKeys.forEach(key => {
             const data = dictionary[key];
+            // 每頁顯示 12 個號碼
             for (let i = 0; i < data.allNumbers.length; i += 12) {
                 finalGroups.push({
                     ...data,
@@ -205,15 +212,26 @@
             }
         });
 
-        groupedData = finalGroups;
-        if (groupedData.length > 0) renderDisplay();
+        if (finalGroups.length > 0) {
+            groupedData = finalGroups;
+            // 如果當前索引因資料更新而越界，則重置
+            if (currentIndex >= groupedData.length) {
+                currentIndex = 0;
+            }
+            if (isInitialLoad) {
+                renderDisplay();
+                isInitialLoad = false;
+            }
+        }
     }
 
     function renderDisplay() {
-        const container = document.getElementById('main-container');
         if (groupedData.length === 0) return;
         
+        const container = document.getElementById('main-container');
         const group = groupedData[currentIndex];
+
+        // 觸發淡出動畫
         container.classList.add('hidden');
 
         setTimeout(() => {
@@ -235,19 +253,23 @@
                     <span class="page-info">頁次 ${currentIndex + 1} / ${groupedData.length}</span>
                 </div>
             `;
+            // 觸發淡入動畫
             container.classList.remove('hidden');
+            
+            // 準備下一頁索引
             currentIndex = (currentIndex + 1) % groupedData.length;
         }, 600);
     }
 
+    // 初始載入
     loadData();
-    /* // 10秒翻頁一次 */
+
+    // 定時換頁 (5秒)
     setInterval(renderDisplay, 5000);
-    /* // 5分鐘刷新一次資料*/
-    setInterval(loadData, 300000);      
+
+    // 定時同步雲端資料 (建議改為 1 分鐘，Google Sheets 有其快取限制)
+    setInterval(loadData, 60000);      
 </script>
 
 </body>
-
 </html>
-
