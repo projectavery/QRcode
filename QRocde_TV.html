@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>幸運中獎名單看板 - 12格版</title>
+    <title>幸運中獎名單看板</title>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.3.2/papaparse.min.js"></script>
     <style>
         :root {
@@ -30,148 +30,180 @@
         #main-container {
             width: 92%;
             max-width: 1300px;
-            min-height: 80vh;
+            min-height: 70vh; /* 確保高度一致，切換時不跳動 */
             background: var(--card-bg);
             padding: 40px 50px;
             border-radius: 40px;
-            box-shadow: 0 40px 100px rgba(0,0,0,0.8);
+            box-shadow: 0 40px 100px rgba(0,0,0,0.8), inset 0 0 20px rgba(212, 175, 55, 0.1);
             border: 1px solid rgba(212, 175, 55, 0.2);
             text-align: center;
             position: relative;
-            transition: opacity 0.6s ease;
+            transition: opacity 0.6s ease, transform 0.6s ease;
         }
 
-        #main-container.hidden { opacity: 0; }
+        #main-container.hidden {
+            opacity: 0;
+            transform: translateY(10px);
+        }
+
+        /* 頂部裝飾條 */
+        #main-container::before {
+            content: "";
+            position: absolute;
+            top: 0; left: 50%;
+            transform: translateX(-50%);
+            width: 40%;
+            height: 6px;
+            background: var(--gold-gradient);
+            border-bottom-left-radius: 10px;
+            border-bottom-right-radius: 10px;
+        }
 
         .phase-tag {
             display: inline-block;
             background: var(--warm-red);
+            color: #fff;
             padding: 8px 35px;
             border-radius: 100px;
             font-size: 1.5rem;
             font-weight: bold;
-            margin-bottom: 10px;
+            letter-spacing: 3px;
             box-shadow: 0 4px 15px rgba(142, 27, 27, 0.4);
+            margin-bottom: 15px;
         }
 
         .prize-rank {
-            font-size: 4rem;
+            font-size: clamp(2.5rem, 8vw, 4.2rem); /* 響應式字體 */
             font-weight: bold;
             background: var(--gold-gradient);
             -webkit-background-clip: text;
             -webkit-text-fill-color: transparent;
             margin: 5px 0;
+            filter: drop-shadow(0 2px 4px rgba(0,0,0,0.3));
         }
 
         .prize-content {
-            font-size: 2rem;
+            font-size: clamp(1.5rem, 4vw, 2.2rem);
             color: #e0d0d0;
-            margin-bottom: 25px;
+            margin-bottom: 30px;
             font-weight: bold;
         }
 
-        /* 12格矩陣設定 */
         .numbers-grid {
             display: grid;
-            grid-template-columns: repeat(4, 1fr); /* 4欄 */
-            grid-template-rows: repeat(3, 1fr);    /* 3列 */
-            gap: 15px;
-            margin-bottom: 30px;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 20px;
+            margin-bottom: 35px;
         }
 
         .ticket-no {
-            font-size: 2.8rem;
+            font-size: clamp(1.8rem, 5vw, 3rem);
             font-weight: bold;
             color: #fff;
-            background: linear-gradient(180deg, #463232 0%, #1e1919 100%);
-            padding: 15px 0;
+            background: linear-gradient(180deg, rgba(70, 50, 50, 1) 0%, rgba(30, 25, 25, 1) 100%);
+            padding: 15px 5px;
             border-radius: 15px;
             border: 2px solid rgba(212, 175, 55, 0.5);
-            box-shadow: 0 5px 15px rgba(0,0,0,0.5);
-            text-shadow: 0 0 10px rgba(255, 235, 59, 0.5);
+            box-shadow: 0 8px 20px rgba(0,0,0,0.5);
+            letter-spacing: 2px;
         }
 
         .footer-info {
             display: flex;
             justify-content: space-between;
+            align-items: center;
             border-top: 1px solid rgba(255,255,255,0.1);
             padding-top: 20px;
-            font-size: 1.2rem;
+            font-size: 1.3rem;
         }
 
-        .remark-text { color: var(--highlight-gold); font-weight: bold; }
+        .remark-text {
+            color: var(--highlight-gold);
+            font-weight: bold;
+            text-shadow: 0 0 10px rgba(255, 235, 59, 0.3);
+        }
+
+        .page-info {
+            color: #aaa;
+            font-size: 1.1rem;
+        }
+
         .loading { font-size: 2rem; color: #d4af37; padding: 100px; }
     </style>
 </head>
 <body>
 
 <div id="main-container">
-    <div class="loading">正在連線至雲端系統...</div>
+    <div class="loading">正在連線雲端資料庫...</div>
 </div>
 
 <script>
     const targetUrl = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vSkwZLmao8afS8265szRVJHa3s6tFRcS2pEc51_9k92ZS4VmYugFodOfaSYHY8xCSf_5xxwrJf5Epob/pub?gid=31666847&single=true&output=csv';
+    const PROXY_URL = 'https://api.allorigins.win/raw?url=' + encodeURIComponent(targetUrl);
     
-    // 備援代理 (當直連失敗時使用)
-    const backupProxy = 'https://api.allorigins.win/raw?url=' + encodeURIComponent(targetUrl);
+    const PRIZE_ORDER = ["特別獎", "頭獎", "二獎", "三獎", "四獎", "五獎", "六獎", "七獎", "八獎", "九獎", "十獎", "十一獎", "十二獎", "十三獎", "十四獎", "十五獎", "十六獎", "十七獎", "十八獎", "十九獎", "二十獎", "二十一獎", "二十二獎"];
 
     let groupedData = [];
     let currentIndex = 0;
+    let isInitialLoad = true;
 
-    // 核心資料讀取邏輯
     async function loadData() {
         try {
-            console.log("嘗試直接連線 Google Sheets...");
-            const response = await fetch(targetUrl, { cache: "no-cache" });
-            if (!response.ok) throw new Error('直連受阻');
+            const response = await fetch(PROXY_URL);
+            if (!response.ok) throw new Error('連線失敗');
             const csvText = await response.text();
-            parseAndProcess(csvText);
+            
+            Papa.parse(csvText, {
+                header: true,
+                skipEmptyLines: true,
+                complete: function(results) {
+                    processData(results.data);
+                }
+            });
         } catch (err) {
-            console.warn("直連失敗，啟用備援代理模式...");
-            try {
-                const proxyRes = await fetch(backupProxy);
-                const proxyText = await proxyRes.text();
-                parseAndProcess(proxyText);
-            } catch (proxyErr) {
-                console.error("所有連線路徑皆失敗");
+            console.error("資料獲取錯誤:", err);
+            if (isInitialLoad) {
+                document.getElementById('main-container').innerHTML = `<div class="loading">目前無法連線至資料庫，請檢查網路。</div>`;
             }
         }
     }
 
-    function parseAndProcess(text) {
-        Papa.parse(text, {
-            header: true,
-            skipEmptyLines: true,
-            complete: function(results) {
-                processLotteryGroups(results.data);
-            }
-        });
-    }
-
-    function processLotteryGroups(rawData) {
+    function processData(rawData) {
         let dictionary = {};
-        rawData.forEach(item => {
-            const rank = (item['獎次'] || '').trim();
-            const content = (item['獎品內容'] || '').trim();
-            if (!rank) return;
 
-            const key = rank + content;
+        rawData.forEach((item) => {
+            const prizeName = (item['獎次'] || '').trim();
+            const prizeContent = (item['獎品內容'] || '').trim();
+            if (!prizeName) return; // 跳過空行
+
+            const key = prizeName + prizeContent;
+
             if (!dictionary[key]) {
                 dictionary[key] = {
                     phase: item['抽獎階段'],
-                    rank: rank,
-                    content: content,
+                    rank: prizeName,
+                    content: prizeContent,
                     remark: item['備註'] || '無',
                     allNumbers: []
                 };
             }
-            if (item['摸彩卷號碼']) dictionary[key].allNumbers.push(item['摸彩卷號碼']);
+            if (item['摸彩卷號碼']) {
+                dictionary[key].allNumbers.push(item['摸彩卷號碼']);
+            }
+        });
+
+        const sortedKeys = Object.keys(dictionary).sort((a, b) => {
+            let indexA = PRIZE_ORDER.indexOf(dictionary[a].rank);
+            let indexB = PRIZE_ORDER.indexOf(dictionary[b].rank);
+            if (indexA === -1) indexA = 999;
+            if (indexB === -1) indexB = 999;
+            return indexA - indexB;
         });
 
         const finalGroups = [];
-        Object.keys(dictionary).forEach(key => {
+        sortedKeys.forEach(key => {
             const data = dictionary[key];
-            // 分割成每頁 12 個
+            // 每頁顯示 12 個號碼
             for (let i = 0; i < data.allNumbers.length; i += 12) {
                 finalGroups.push({
                     ...data,
@@ -182,15 +214,24 @@
 
         if (finalGroups.length > 0) {
             groupedData = finalGroups;
-            renderDisplay();
+            // 如果當前索引因資料更新而越界，則重置
+            if (currentIndex >= groupedData.length) {
+                currentIndex = 0;
+            }
+            if (isInitialLoad) {
+                renderDisplay();
+                isInitialLoad = false;
+            }
         }
     }
 
     function renderDisplay() {
         if (groupedData.length === 0) return;
+        
         const container = document.getElementById('main-container');
         const group = groupedData[currentIndex];
 
+        // 觸發淡出動畫
         container.classList.add('hidden');
 
         setTimeout(() => {
@@ -202,23 +243,33 @@
                 <div class="phase-tag">${group.phase || ''}</div>
                 <div class="prize-rank">${group.rank || ''}</div>
                 <div class="prize-content">${group.content || ''}</div>
-                <div class="numbers-grid">${numbersHTML}</div>
+                
+                <div class="numbers-grid">
+                    ${numbersHTML}
+                </div>
+
                 <div class="footer-info">
                     <span class="remark-text">備註：${group.remark}</span>
-                    <span>頁次 ${currentIndex + 1} / ${groupedData.length}</span>
+                    <span class="page-info">頁次 ${currentIndex + 1} / ${groupedData.length}</span>
                 </div>
             `;
+            // 觸發淡入動畫
             container.classList.remove('hidden');
+            
+            // 準備下一頁索引
             currentIndex = (currentIndex + 1) % groupedData.length;
         }, 600);
     }
 
-    // 啟動程序
+    // 初始載入
     loadData();
-    setInterval(renderDisplay, 10000); // 10秒輪播
-    setInterval(loadData, 60000);      // 1分鐘同步雲端
+
+    // 定時換頁 (5秒)
+    setInterval(renderDisplay, 5000);
+
+    // 定時同步雲端資料 (建議改為 1 分鐘，Google Sheets 有其快取限制)
+    setInterval(loadData, 60000);      
 </script>
 
 </body>
 </html>
-
