@@ -123,7 +123,6 @@
 
     <script>
         const WEBHOOK_URL = 'https://projectboy-n8n-free.hf.space/webhook/new_bingo';
-        // const WEBHOOK_URL = 'https://buck-decent-bobcat.ngrok-free.app/webhook/new_bingo';
         let html5QrCode;
         let isEditMode = false;
         let currentNote = "";
@@ -132,9 +131,7 @@
             "台北市": ["中正區", "萬華區", "大同區", "中山區", "松山區", "大安區", "信義區", "內湖區", "南港區", "士林區", "北投區", "文山區"],
             "新北市": ["板橋區", "三重區", "中和區", "永和區", "新莊區", "新店區", "樹林區", "鶯歌區", "三峽區", "淡水區", "汐止區", "瑞芳區", "土城區", "蘆洲區", "五股區", "泰山區", "林口區", "深坑區", "石碇區", "坪林區", "三芝區", "石門區", "八里區", "平溪區", "雙溪區", "貢寮區", "金山區", "萬里區", "烏來區"],
             "桃園市": ["桃園區", "中壢區", "大溪區", "楊梅區", "蘆竹區", "大園區", "龜山區", "八德區", "龍潭區", "平鎮區", "新屋區", "觀音區", "復興區"],
-            "台中市": ["中區", "東區", "南區", "西區", "北區", "北屯區", "西屯區", "南屯區", "太平區", "大里區", "霧峰區", "烏日區", "豐原區", "後里區", "石岡區", "東勢區", "和平區", "新社區", "潭子區", "大雅區", "神岡區", "大肚區", "沙鹿區", "龍井區", "梧棲區", "清水區", "大甲區", "外埔區", "大安區"],
-            "彰化縣": ["彰化市", "員林市", "鹿港鎮", "和美鎮", "田中鎮", "二林鎮", "永靖鄉", "社頭鄉", "溪州鄉"], // 部分節錄
-            "高雄市": ["新興區", "前金區", "苓雅區", "鹽埕區", "鼓山區", "旗津區", "前鎮區", "三民區", "楠梓區", "鳳山區"] // 部分節錄
+            "台中市": ["中區", "東區", "南區", "西區", "北區", "北屯區", "西屯區", "南屯區", "太平區", "大里區", "霧峰區", "烏日區", "豐原區", "後里區", "石岡區", "東勢區", "和平區", "新社區", "潭子區", "大雅區", "神岡區", "大肚區", "沙鹿區", "龍井區", "梧棲區", "清水區", "大甲區", "外埔區", "大安區"]
         };
 
         window.onload = () => {
@@ -170,15 +167,25 @@
         function closeModal() { document.getElementById('rewardModal').style.display = 'none'; }
 
         async function handleAction(actionType) {
-            const idValue = document.getElementById('scannedResult').value;
-            if (actionType !== 'progress' && !idValue) { alert("請先輸入或掃描編號"); return; }
+            const inputField = document.getElementById('scannedResult');
+            const idValue = inputField.value;
+
+            // 如果點擊的是「全體進度」，先清空特定的中獎編號與相關按鈕
+            if (actionType === 'progress') {
+                inputField.value = ""; 
+                document.getElementById('updateConfirmBtn').style.display = 'none';
+                document.getElementById('editInfoBtn').style.display = 'none';
+            } else if (!idValue) {
+                alert("請先輸入或掃描編號");
+                return;
+            }
             
             document.getElementById('status').innerText = "連線中...";
             try {
                 const response = await fetch(WEBHOOK_URL, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ action: actionType, id: idValue || "GLOBAL" })
+                    body: JSON.stringify({ action: actionType, id: inputField.value || "GLOBAL" })
                 });
                 const content = await response.text();
                 document.getElementById('displayArea').innerHTML = content;
@@ -197,22 +204,18 @@
         async function fetchOldDataAndOpenModal() {
             const idValue = document.getElementById('scannedResult').value;
             document.getElementById('status').innerText = "取得資料中...";
-            
             try {
                 const response = await fetch(WEBHOOK_URL, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({ action: "get_user_data", id: idValue })
                 });
-
                 const dataArray = await response.json();
                 const data = Array.isArray(dataArray) ? dataArray[0] : dataArray;
-
                 if (data) {
                     document.getElementById('userName').value = data["姓名"] || "";
                     document.getElementById('userPhone').value = data["電話"] || "";
                     document.getElementById('userIdCard').value = data["身分證ID"] || "";
-                    
                     const fullAddr = data["地址"] || "";
                     if (fullAddr.length >= 6) {
                         document.getElementById('userCity').value = fullAddr.substring(0, 3);
@@ -222,7 +225,6 @@
                     } else {
                         document.getElementById('userAddress').value = fullAddr;
                     }
-
                     isEditMode = true;
                     document.getElementById('modalTitle').innerText = "✏️ 修改中獎人資料";
                     document.getElementById('modalTitle').style.color = "var(--edit-color)";
@@ -231,7 +233,7 @@
                     openModal();
                     document.getElementById('status').innerText = "資料載入成功";
                 }
-            } catch (e) { alert("無法取得資料，請檢查網路"); }
+            } catch (e) { alert("無法取得資料"); }
         }
 
         function preSubmitCheck() {
@@ -240,14 +242,11 @@
             document.getElementById('modalTitle').style.color = "var(--success-color)";
             document.getElementById('finalSubmitBtn').innerText = "確認送出";
             document.getElementById('finalSubmitBtn').style.background = "var(--success-color)";
-            
-            // 清空舊輸入
             document.getElementById('userName').value = "";
             document.getElementById('userPhone').value = "";
             document.getElementById('userIdCard').value = "";
             document.getElementById('userAddress').value = "";
             setDefaultLocation();
-
             if (currentNote.includes("需身分證")) { openModal(); } 
             else if (confirm("此獎項不需身分證，確認立即領獎？")) { submitRewardData(false); }
         }
@@ -255,13 +254,9 @@
         async function submitRewardData(hasUserInfo) {
             const idValue = document.getElementById('scannedResult').value;
             const submitBtn = document.getElementById('finalSubmitBtn');
-            const payload = { 
-                action: isEditMode ? 'update_info' : 'updata', 
-                id: idValue 
-            };
-
+            const payload = { action: isEditMode ? 'update_info' : 'updata', id: idValue };
             if (hasUserInfo) {
-                const userData = {
+                payload.userInfo = {
                     name: document.getElementById('userName').value.trim(),
                     phone: document.getElementById('userPhone').value.trim(),
                     idCard: document.getElementById('userIdCard').value.trim(),
@@ -269,12 +264,7 @@
                     district: document.getElementById('userDistrict').value,
                     address: document.getElementById('userAddress').value.trim()
                 };
-                if (!userData.name || !userData.phone || !userData.idCard) {
-                    alert("姓名、電話與身分證為必填！"); return;
-                }
-                payload.userInfo = userData;
             }
-
             submitBtn.disabled = true;
             try {
                 const response = await fetch(WEBHOOK_URL, {
@@ -282,14 +272,11 @@
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify(payload)
                 });
-                
                 if (response.ok) {
-                    alert(isEditMode ? "✅ 資料修改成功！" : "✅ 領獎成功！");
+                    alert(isEditMode ? "✅ 修改成功！" : "✅ 領獎成功！");
                     closeModal();
-                    
-                    // --- 操作成功後，清除畫面所有內容 ---
-                    document.getElementById('scannedResult').value = ""; // 清除號碼
-                    document.getElementById('displayArea').innerHTML = ""; // 清除查詢結果
+                    document.getElementById('scannedResult').value = ""; 
+                    document.getElementById('displayArea').innerHTML = ""; 
                     document.getElementById('status').innerText = "準備就緒";
                     document.getElementById('updateConfirmBtn').style.display = 'none';
                     document.getElementById('editInfoBtn').style.display = 'none';
