@@ -97,7 +97,10 @@
     <div id="reader"></div>
 
     <div class="container">
-        <textarea id="scannedResult" placeholder="點擊重新掃描或在此手動輸入編號..."></textarea>
+        <textarea id="scannedResult" 
+          placeholder="點擊重新掃描或在此手動輸入編號..." 
+          wrap="off" 
+          onkeydown="if(event.keyCode===13){event.preventDefault();handleAction('code');}"></textarea>
         
         <div class="btn-group">
             <button class="btn-scan" onclick="startScanner()">🔄 啟動相機掃描</button>
@@ -202,4 +205,5 @@
         }
     </script>
 </body>
+
 </html>
