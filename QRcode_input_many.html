@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>抽獎系統 Pro - 批次匯入</title>
+    <title>抽獎系統 - 批次匯入</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
     <script src="https://unpkg.com/html5-qrcode"></script>
@@ -188,7 +188,7 @@
             try {
                 // https://buck-decent-bobcat.ngrok-free.app/webhook/new_bingo
                 // https://projectboy-n8n-free.hf.space/webhook/new_bingo
-                const response = await fetch("https://buck-decent-bobcat.ngrok-free.app/webhook/new_bingo", {
+                const response = await fetch("https://projectboy-n8n-free.hf.space/webhook/new_bingo", {
                     method: "POST",
                     headers: { "Content-Type": "application/json" },
                     body: JSON.stringify({
@@ -236,4 +236,5 @@
         }
     </script>
 </body>
+
 </html>
