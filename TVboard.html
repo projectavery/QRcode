@@ -1,0 +1,269 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>幸運中獎名單看板 - 智慧縮放版</title>
+    
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Serif+TC:wght@900&display=swap" rel="stylesheet">
+    
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.3.2/papaparse.min.js"></script>
+    
+    <style>
+        :root { --bg-dark: #f37021; }
+
+        body {
+            font-family: "Noto Serif TC", serif;
+            font-weight: 900;
+            margin: 0; padding: 0;
+            display: flex; justify-content: center; align-items: flex-start;
+            height: 100vh; width: 100vw;
+            overflow: hidden;
+            background-image: url('https://i.ibb.co/F41MrWbQ/signage-bg.jpg'); 
+            background-size: 100% 100%;
+            background-position: center;
+            background-color: var(--bg-dark);
+        }
+
+        #main-container {
+            width: 94%;
+            max-width: 1850px;
+            margin-top: 6vh;
+            transition: opacity 0.5s ease;
+        }
+
+        #main-container.hidden { opacity: 0; }
+
+        .header-section {
+            display: flex;
+            align-items: flex-end;
+            width: 100%;
+            margin-bottom: 2vh;
+            border-bottom: none;
+            padding-bottom: 12px;
+            height: 115px; 
+            /* --- 新增下方這行，數字越大文字越往下 --- */
+            padding-top: 20px;
+        }
+
+        /* 獎次佈局 */
+        .prize-rank-box { flex: 0 0 20%; text-align: center; overflow: hidden; }
+        .prize-rank {
+            font-size: 60px; /* 您可以在這裡直接修改預設最大字級 */
+            color: #DFD5B8;
+            white-space: nowrap;
+            text-shadow: 2px 2px 15px rgba(0,0,0,0.4);
+            display: inline-block;
+            line-height: 1.1;
+            /* 新增這行：負數會往左拉 */
+            margin-left: -40px;
+        }
+
+        /* 內容佈局 */
+        .prize-content-box { 
+            flex: 1; 
+            text-align: center; 
+            overflow: hidden; 
+            padding: 0 15px;
+        }
+        .prize-content {
+            font-size: 50px; /* 您可以在這裡直接修改預設最大字級 */
+            color: #FFFFFF;
+            text-shadow: 2px 2px 15px rgba(0,0,0,0.4);
+            white-space: nowrap;
+            display: inline-block;
+            line-height: 1.1;
+        }
+
+        .phase-tag-box { flex: 0 0 20%; text-align: center; }
+        .phase-tag {
+            font-size: 40px;
+            color: #DFD5B8;
+            white-space: nowrap;
+            text-shadow: 2px 2px 15px rgba(0,0,0,0.4);
+            margin-right: -70px;
+        }
+
+        .numbers-grid {
+            display: grid;
+            grid-template-columns: repeat(5, 1fr);
+            gap: 4.5vh 0.5vw; 
+            width: 100%;
+            margin-top: 30px;
+        }
+
+        .ticket-no {
+            font-size: 60px; /* 號碼預設大小 */
+            color: #FFFFFF;
+            text-align: center;
+            text-shadow: 3px 3px 20px rgba(0, 0, 0, 0.6);
+            letter-spacing: 2px;
+            line-height: 1.1;
+        }
+
+        .footer-info {
+            position: fixed;
+            bottom: 4vh; left: 5%; right: 5%;
+            display: flex; justify-content: space-between;
+            font-size: 24px; color: #fff;
+        }
+
+        .loading { font-size: 2rem; color: #fff; text-align: center; width: 100%; padding-top: 25vh; }
+    </style>
+</head>
+<body>
+
+<div id="main-container">
+    <div class="loading">正在獲取最新名單...</div>
+</div>
+
+<script>
+    const targetUrl = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vSkwZLmao8afS8265szRVJHa3s6tFRcS2pEc51_9k92ZS4VmYugFodOfaSYHY8xCSf_5xxwrJf5Epob/pub?gid=31666847&single=true&output=csv';
+    
+    const backupProxy = 'https://api.allorigins.win/raw?url=' + encodeURIComponent(targetUrl);
+    const PRIZE_ORDER = ["特別獎", "頭獎", "二獎", "三獎", "四獎", "五獎", "六獎", "七獎", "八獎", "九獎", "十獎", "十一獎", "十二獎", "十三獎", "十四獎", "十五獎", "十六獎", "十七獎", "十八獎", "十九獎", "二十獎", "二十一獎", "二十二獎"];
+
+    let groupedData = [];
+    let currentIndex = 0;
+
+    async function loadData() {
+        try {
+            // 加入隨時戳記防止快取
+            const response = await fetch(`${targetUrl}&t=${new Date().getTime()}`, { cache: "no-cache" });
+            if (!response.ok) throw new Error('直連失敗');
+            const csvText = await response.text();
+            parseAndProcess(csvText);
+        } catch (err) {
+            console.warn("直連失敗，嘗試代理伺服器...");
+            try {
+                const proxyRes = await fetch(backupProxy);
+                const proxyText = await proxyRes.text();
+                parseAndProcess(proxyText);
+            } catch (proxyErr) {
+                document.querySelector('.loading').innerText = "資料載入失敗，請檢查網路或 Excel 連結";
+                console.error("資料載入完全失敗", proxyErr);
+            }
+        }
+    }
+
+    function parseAndProcess(text) {
+        Papa.parse(text, {
+            header: true, 
+            skipEmptyLines: true,
+            complete: function(results) { 
+                if (results.data && results.data.length > 0) {
+                    processLotteryGroups(results.data); 
+                } else {
+                    document.querySelector('.loading').innerText = "Excel 內無資料";
+                }
+            }
+        });
+    }
+
+    function processLotteryGroups(rawData) {
+        let dictionary = {};
+        rawData.forEach(item => {
+            const rank = (item['獎次'] || '').trim();
+            const content = (item['獎品內容'] || '').trim();
+            if (!rank) return;
+            const key = rank + content;
+            if (!dictionary[key]) {
+                dictionary[key] = {
+                    phase: item['抽獎階段'], rank: rank, content: content,
+                    remark: item['備註'] || '無', allNumbers: []
+                };
+            }
+            if (item['摸彩卷號碼']) dictionary[key].allNumbers.push(item['摸彩卷號碼'].trim());
+        });
+
+        const sortedKeys = Object.keys(dictionary).sort((a, b) => {
+            const indexA = PRIZE_ORDER.indexOf(dictionary[a].rank);
+            const indexB = PRIZE_ORDER.indexOf(dictionary[b].rank);
+            return (indexA === -1 ? 999 : indexA) - (indexB === -1 ? 999 : indexB);
+        });
+
+        const finalGroups = [];
+        sortedKeys.forEach(key => {
+            const data = dictionary[key];
+            for (let i = 0; i < data.allNumbers.length; i += 25) {
+                finalGroups.push({ ...data, numbers: data.allNumbers.slice(i, i + 25) });
+            }
+        });
+
+        if (finalGroups.length > 0) {
+            groupedData = finalGroups;
+            renderDisplay();
+        }
+    }
+
+    // --- 強化版：自動縮放函式，加入防錯保護 ---
+    function autoShrinkText(elementId, parentSelector) {
+        const el = document.getElementById(elementId);
+        const parent = document.querySelector(parentSelector);
+        if (!el || !parent) return;
+
+        // 確保先還原成 CSS 預設大小
+        el.style.fontSize = ""; 
+        
+        // 使用 getComputedStyle 抓取 CSS 設定的大小
+        let style = window.getComputedStyle(el);
+        let curSize = parseFloat(style.fontSize);
+
+        // 如果抓取失敗，給予保底預設值
+        if (isNaN(curSize)) curSize = (elementId === 'fit-rank') ? 80 : 65;
+
+        // 核心縮放邏輯
+        let limit = 0; // 防止無窮迴圈
+        while (el.offsetWidth > parent.clientWidth && curSize > 20 && limit < 50) {
+            curSize -= 2;
+            el.style.fontSize = curSize + "px";
+            limit++;
+        }
+    }
+
+    function renderDisplay() {
+        if (groupedData.length === 0) return;
+        const container = document.getElementById('main-container');
+        const group = groupedData[currentIndex];
+
+        // 移除 loading 文字並顯示容器
+        container.classList.add('hidden');
+
+        setTimeout(() => {
+            const numbersHTML = group.numbers.map(num => `<div class="ticket-no">${num}</div>`).join('');
+            
+            // 插入 HTML
+            container.innerHTML = `
+                <div class="header-section">
+                    <div class="prize-rank-box"><div class="prize-rank" id="fit-rank">${group.rank}</div></div>
+                    <div class="prize-content-box"><div class="prize-content" id="fit-content">${group.content}</div></div>
+                    <div class="phase-tag-box"><div class="phase-tag">${group.phase || ''}</div></div>
+                </div>
+                <div class="numbers-grid">${numbersHTML}</div>
+                <div class="footer-info">
+                    <span class="remark-text">備註：${group.remark}</span>
+                    <span>頁次 ${currentIndex + 1} / ${groupedData.length}</span>
+                </div>
+            `;
+
+            // 確保 HTML 渲染到 DOM 後才執行計算
+            requestAnimationFrame(() => {
+                autoShrinkText('fit-rank', '.prize-rank-box');
+                autoShrinkText('fit-content', '.prize-content-box');
+                container.classList.remove('hidden');
+            });
+
+            currentIndex = (currentIndex + 1) % groupedData.length;
+        }, 500);
+    }
+
+    // 啟動
+    loadData();
+    setInterval(renderDisplay, 10000); 
+    setInterval(loadData, 60000); 
+</script>
+
+</body>
+</html>
