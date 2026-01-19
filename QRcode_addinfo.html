@@ -309,16 +309,46 @@
         }
 
         async function startScanner() {
-            if (html5QrCode) await html5QrCode.stop().catch(() => {});
+            document.getElementById('scannedResult').value = "";
+            document.getElementById('displayArea').innerHTML = "";
+            document.getElementById('status').innerText = "相機啟動中...";
+
+            if (html5QrCode && html5QrCode.isScanning) {
+                try {
+                    await html5QrCode.stop();
+                } catch (e) { console.warn(e); }
+            }
+
             html5QrCode = new Html5Qrcode("reader");
-            html5QrCode.start({ facingMode: "environment" }, { fps: 10, qrbox: 250 }, (text) => {
-                document.getElementById('scannedResult').value = text;
-                html5QrCode.stop().then(() => handleAction('code'));
-            }).catch(() => alert("相機開啟失敗"));
+
+            const config = { 
+                fps: 10, 
+                qrbox: { width: 250, height: 250 },
+                aspectRatio: 1.0 
+            };
+            
+            try {
+                await html5QrCode.start(
+                    { facingMode: "environment" }, 
+                    config,
+                    (decodedText) => {
+                        document.getElementById('scannedResult').value = decodedText;
+                        html5QrCode.stop().then(() => {
+                            document.getElementById('status').innerText = "掃描成功，自動查詢中...";
+                            handleAction('code');
+                        });
+                        if (navigator.vibrate) navigator.vibrate(100);
+                    }
+                );
+                document.getElementById('status').innerText = "相機已就緒";
+            } catch (err) {
+                document.getElementById('status').innerText = "無法開啟相機：" + err;
+            }
         }
     </script>
 </body>
 </html>
+
 
 
 
