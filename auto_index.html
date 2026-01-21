@@ -1,0 +1,121 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>庫存分析即時看板 (穩定連線版)</title>
+    <style>
+        :root { --blue: #3182ce; --orange: #ed8936; --red: #e53e3e; --gray: #718096; --bg: #f7fafc; }
+        body { font-family: 'PingFang TC', 'Microsoft JhengHei', sans-serif; background-color: var(--bg); margin: 0; padding: 20px; color: #2d3748; }
+        .container { max-width: 1200px; margin: auto; }
+        .header { background: #1a202c; color: white; padding: 25px; border-radius: 15px 15px 0 0; text-align: center; }
+        .header h1 { margin: 0; font-size: 28px; letter-spacing: 2px; }
+        .chart-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(350px, 1fr)); gap: 20px; margin-top: 20px; }
+        .card { background: white; border-radius: 12px; padding: 25px; text-align: center; box-shadow: 0 4px 12px rgba(0,0,0,0.05); border: 1px solid #e2e8f0; }
+        .card-title { font-size: 20px; font-weight: bold; margin-bottom: 15px; }
+        .chart-img { width: 100%; max-width: 350px; height: auto; display: block; margin: 0 auto; min-height: 200px; }
+        .stats { margin-top: 20px; display: flex; justify-content: space-around; background: #fcfcfc; padding: 15px; border-radius: 8px; }
+        .stat-value { font-size: 22px; font-weight: bold; }
+        .footer { text-align: center; padding: 30px; color: var(--gray); font-size: 14px; line-height: 1.6; }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <div class="header">
+        <h1>📊 庫存分析動態看板</h1>
+        <div id="update-time" style="font-size: 14px; opacity: 0.8; margin-top: 10px;">正在請求數據...</div>
+    </div>
+
+    <div class="chart-grid">
+        <div class="card">
+            <div class="card-title" style="color: var(--blue);">高額庫存占比(金額>500K)</div>
+            <img id="chart-high" class="chart-img" src="">
+            <div class="stats">
+                <div><span style="color:var(--gray)">筆數</span><br><span id="val-high-count" class="stat-value">-</span></div>
+                <div><span style="color:var(--gray)">占比</span><br><span id="val-high-pct" class="stat-value">-</span></div>
+            </div>
+        </div>
+
+        <div class="card">
+            <div class="card-title" style="color: var(--orange);">缺料風險 (低於水位)</div>
+            <img id="chart-risk" class="chart-img" src="">
+            <div class="stats">
+                <div><span style="color:var(--gray)">筆數</span><br><span id="val-risk-count" class="stat-value">-</span></div>
+                <div><span style="color:var(--gray)">占比</span><br><span id="val-risk-pct" class="stat-value">-</span></div>
+            </div>
+        </div>
+
+        <div class="card">
+            <div class="card-title" style="color: var(--red);">金額異常 (負值)</div>
+            <img id="chart-error" class="chart-img" src="">
+            <div class="stats">
+                <div><span style="color:var(--gray)">筆數</span><br><span id="val-error-count" class="stat-value">-</span></div>
+                <div><span style="color:var(--gray)">占比</span><br><span id="val-error-pct" class="stat-value">-</span></div>
+            </div>
+        </div>
+    </div>
+
+    <div class="footer">
+        本報表由 n8n Webhook 自動產生，每 3 小時同步一次 Google Sheets 數據。<br>
+        最後載入成功時間：<span id="last-fetch">-</span>
+    </div>
+</div>
+
+<script>
+    const SHEET_ID = '1IZE-Fgw7IHoyGQjdUpTVg5pFPSklDVIDu9DQZzano3I';
+    const GID = '971697619';
+
+    window.handleResponse = function(response) {
+        const rows = response.table.rows;
+        if (rows && rows.length > 0) {
+            const row = rows[0].c;
+            const total = row[1]?.v || 0;
+            
+            // 更新 UI，帶入對應的名稱與顏色代碼
+            updateUI('high', row[2]?.v, row[3]?.v, '%233182ce', '高額庫存');
+            updateUI('risk', row[4]?.v, row[5]?.v, '%23ed8936', '低於水位');
+            updateUI('error', row[6]?.v, row[7]?.v, '%23e53e3e', '金額異常');
+
+            const now = new Date();
+            const timeStr = now.toLocaleString('zh-TW', { 
+                year: 'numeric', month: '2-digit', day: '2-digit', 
+                hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: false 
+            });
+
+            document.getElementById('update-time').innerText = `看板同步時間：${timeStr} (總計 ${total.toLocaleString()} 筆)`;
+            document.getElementById('last-fetch').innerText = timeStr;
+        }
+    };
+
+    function loadData() {
+        const oldScript = document.getElementById('google-data-script');
+        if (oldScript) oldScript.remove();
+        const script = document.createElement('script');
+        script.id = 'google-data-script';
+        script.src = `https://docs.google.com/spreadsheets/d/${SHEET_ID}/gviz/tq?tqx=responseHandler:handleResponse&gid=${GID}`;
+        document.body.appendChild(script);
+    }
+
+    function updateUI(type, count, pct, colorCode, labelName) {
+        let displayPct = parseFloat(pct);
+        if (displayPct < 1 && displayPct > 0) displayPct = (displayPct * 100);
+        displayPct = displayPct.toFixed(2);
+        let remainPct = (100 - displayPct).toFixed(2);
+
+        document.getElementById(`val-${type}-count`).innerText = Math.floor(count).toLocaleString();
+        document.getElementById(`val-${type}-pct`).innerText = displayPct + '%';
+        
+        // 使用您提供的方式，直接拼接 URL 字串
+        // 這裡將 labels:['標的','總庫存'] 替換為動態傳入的 labelName
+        const chartUrl = "https://quickchart.io/chart?c={type:'doughnut',data:{labels:['" + labelName + "','總庫存'],datasets:[{data:[" + displayPct + "," + remainPct + "],backgroundColor:['" + colorCode + "','%23e2e8f0']}]},options:{plugins:{legend:{labels:{font:{size:30}}},doughnutlabel:{labels:[{text:'" + displayPct + "%25',font:{size:40}}]}}}}&w=450&h=450";
+        
+        document.getElementById(`chart-${type}`).src = chartUrl;
+    }
+
+    loadData();
+    setInterval(loadData, 10800000);
+</script>
+
+</body>
+</html>
