@@ -81,18 +81,6 @@
                     <label class="block text-sm font-bold text-slate-600 ml-1 mb-1">階段</label>
                     <select id="stage" class="block w-full rounded-xl border-gray-200 p-3 border-2 focus:ring-blue-500 bg-white">
                         <option value="">請選擇</option>
-                        <option value="第一階段">第一階段</option>
-                        <option value="第二階段">第二階段</option>
-                        <option value="第三階段">第三階段</option>
-                        <option value="第四階段">第四階段</option>
-                        <option value="第五階段">第五階段</option>
-                        <option value="第六階段">第六階段</option>
-                        <option value="第七階段">第七階段</option>
-                        <option value="第八階段">第八階段</option>
-                        <option value="第九階段">第九階段</option>
-                        <option value="第十階段">第十階段</option>
-                        <option value="第十一階段">第十一階段</option>
-                        <option value="第十二階段">第十二階段</option>
                     </select>
                 </div>
             </div>
@@ -139,6 +127,30 @@
             "二十獎": { content: "顏式畜牧場｜黃金養生蛋", note: "" },
         };
 
+        const prizeToStages = {
+            "特別獎": ["第五階段", "第九階段"],
+            "頭獎": ["第一階段"],
+            "二獎": ["第九階段"],
+            "三獎": ["第九階段"],
+            "四獎": ["第八階段"],
+            "五獎": ["第八階段"],
+            "六獎": ["第七階段", "第八階段"],
+            "七獎": ["第五階段", "第六階段"],
+            "八獎": ["第三階段", "第四階段", "第五階段", "第六階段", "第七階段", "第八階段"],
+            "九獎": ["第二階段", "第三階段", "第四階段", "第五階段", "第六階段", "第七階段"],
+            "十獎": ["第二階段", "第三階段", "第四階段"],
+            "十一獎": ["第二階段"],
+            "十二獎": ["第二階段"],
+            "十三獎": ["第二階段"],
+            "十四獎": ["第二階段"],
+            "十五獎": ["第一階段"],
+            "十六獎": ["第一階段"],
+            "十七獎": ["第一階段"],
+            "十八獎": ["第一階段"],
+            "十九獎": ["第一階段"],
+            "二十獎": ["第一階段"]
+        };
+        
         const html5QrCode = new Html5Qrcode("reader");
         const qrConfig = { fps: 20, qrbox: { width: 250, height: 250 } };
         let lastScanned = ""; // 防止重複瞬間掃描同一張
@@ -190,12 +202,34 @@
             const category = document.getElementById('prizeCategory').value;
             const content = document.getElementById('prizeContent');
             const note = document.getElementById('prizeNote');
+            const stageSelect = document.getElementById('stage'); // 取得階段選單
+
+            // 1. 更新獎項內容文字
             if (category && prizeData[category]) {
                 content.innerText = prizeData[category].content;
                 note.innerText = prizeData[category].note;
             } else {
                 content.innerText = "-";
                 note.innerText = "-";
+            }
+
+            // 2. 更新階段選單內容
+            // 先清空目前的選項，只保留「請選擇」
+            stageSelect.innerHTML = '<option value="">請選擇</option>';
+
+            if (category && prizeToStages[category]) {
+                // 根據對照表，動態產生新的 <option>
+                prizeToStages[category].forEach(stage => {
+                    const option = document.createElement('option');
+                    option.value = stage;
+                    option.textContent = stage;
+                    stageSelect.appendChild(option);
+                });
+        
+                // 如果該獎項只有一個階段，自動幫使用者選好
+                if (prizeToStages[category].length === 1) {
+                    stageSelect.value = prizeToStages[category][0];
+                }
             }
         }
 
@@ -266,5 +300,6 @@
 </body>
 
 </html>
+
 
 
