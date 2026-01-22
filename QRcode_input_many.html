@@ -164,7 +164,10 @@
                 if(decodedText !== lastScanned) {
                     lastScanned = decodedText;
                     const area = document.getElementById('ticketNumbers');
-                    area.value += (area.value ? "\n" : "") + decodedText;
+                    // 先用 .trim() 把框框內「看不見的換行或空白」抓出來清除掉
+                    const currentVal = area.value.trim(); 
+                    // 如果清除後是空的，就直接放號碼；如果不是空的，才加換行
+                    area.value = (currentVal === "" ? "" : currentVal + "\n") + decodedText;
                     updateCount();
                     
                     if (navigator.vibrate) navigator.vibrate(100);
@@ -300,6 +303,7 @@
 </body>
 
 </html>
+
 
 
 
