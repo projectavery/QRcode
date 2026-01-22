@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>抽獎系統 Pro - 資料匯入</title>
+    <title>抽獎系統 - 批次測試版</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
     <script src="https://unpkg.com/html5-qrcode"></script>
@@ -11,6 +11,9 @@
         @import url('https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400;700&display=swap');
         body { font-family: 'Noto Sans TC', sans-serif; }
         .glass-morphism { background: rgba(255, 255, 255, 0.95); backdrop-filter: blur(10px); }
+        /* 讓文字框更有質感 */
+        textarea::-webkit-scrollbar { width: 6px; }
+        textarea::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 10px; }
     </style>
 </head>
 <body class="bg-gradient-to-br from-slate-100 to-blue-50 min-h-screen p-4 flex items-center justify-center">
@@ -18,27 +21,32 @@
     <div class="max-w-md w-full glass-morphism rounded-3xl shadow-2xl overflow-hidden border border-white">
         <div class="bg-blue-600 p-6 text-white relative">
             <h2 class="text-2xl font-bold flex items-center gap-2">
-                <span class="text-3xl">🎟️</span> 抽獎資料匯入系統
+                <span class="text-3xl">🎟️</span> 抽獎批次匯入系統
             </h2>
-            <p class="text-blue-100 text-sm mt-1">請掃描 QR Code 或手動輸入票號</p>
+            <p class="text-blue-100 text-sm mt-1">支援連續掃描或手動批次輸入</p>
         </div>
 
         <div class="p-6 space-y-5">
             <div class="space-y-3">
-                <label class="block text-sm font-bold text-slate-600 ml-1">抽獎券號碼</label>
+                <div class="flex justify-between items-end ml-1">
+                    <label class="text-sm font-bold text-slate-600">抽獎券號碼 (每行一筆)</label>
+                    <span id="countBadge" class="text-xs font-bold bg-blue-100 text-blue-600 px-2 py-1 rounded-lg">共 0 筆</span>
+                </div>
                 
-                <button id="startBtn" onclick="startScanner()" class="w-full bg-slate-800 text-white py-3 rounded-xl hover:bg-slate-700 transition-all flex items-center justify-center gap-3 shadow-md active:scale-95">
-                    <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 9a2 2 0 012-2h.93a2 2 0 001.664-.89l.812-1.22A2 2 0 0110.07 4h3.86a2 2 0 011.664.89l.812 1.22A2 2 0 0018.07 7H19a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V9z" />
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 13a3 3 0 11-6 0 3 3 0 016 0z" />
-                    </svg>
-                    啟動相機掃描
-                </button>
+                <div id="reader" class="hidden w-full bg-black rounded-2xl overflow-hidden border-4 border-slate-200 mb-3"></div>
 
-                <div id="reader" class="hidden w-full bg-black rounded-2xl overflow-hidden border-4 border-slate-200"></div>
+                <div class="flex gap-2">
+                    <button id="startBtn" onclick="startScanner()" class="flex-1 bg-slate-800 text-white py-3 rounded-xl hover:bg-slate-700 transition-all flex items-center justify-center gap-2 shadow-md">
+                        📷 啟動連續掃描
+                    </button>
+                    <button id="stopBtn" onclick="stopScanner()" class="hidden flex-1 bg-red-500 text-white py-3 rounded-xl hover:bg-red-600 transition-all flex items-center justify-center gap-2 shadow-md">
+                        🛑 停止掃描
+                    </button>
+                </div>
 
-                <input type="text" id="ticketNumber" placeholder="掃描結果或手動輸入" 
-                    class="block w-full rounded-xl border-gray-200 shadow-sm p-4 border-2 focus:ring-blue-500 focus:border-blue-500 text-xl font-mono tracking-wider transition-all">
+                <textarea id="ticketNumbers" rows="6" oninput="updateCount()"
+                    placeholder="請掃描或手動輸入票號&#10;每行一個號碼，例如：&#10;A001&#10;A002" 
+                    class="block w-full rounded-xl border-gray-200 shadow-sm p-4 border-2 focus:ring-blue-500 focus:border-blue-500 text-lg font-mono tracking-wider transition-all"></textarea>
             </div>
 
             <div class="grid grid-cols-2 gap-4">
@@ -53,69 +61,123 @@
                         <option value="四獎">四獎</option>
                         <option value="五獎">五獎</option>
                         <option value="六獎">六獎</option>
+                        <option value="七獎">七獎</option>
+                        <option value="八獎">八獎</option>
+                        <option value="九獎">九獎</option>
+                        <option value="十獎">十獎</option>
+                        <option value="十一獎">十一獎</option>
+                        <option value="十二獎">十二獎</option>
+                        <option value="十三獎">十三獎</option>
+                        <option value="十四獎">十四獎</option>
+                        <option value="十五獎">十五獎</option>
+                        <option value="十六獎">十六獎</option>
+                        <option value="十七獎">十七獎</option>
+                        <option value="十八獎">十八獎</option>
+                        <option value="十九獎">十九獎</option>
+                        <option value="二十獎">二十獎</option>
                     </select>
                 </div>
                 <div class="col-span-1">
                     <label class="block text-sm font-bold text-slate-600 ml-1 mb-1">階段</label>
                     <select id="stage" class="block w-full rounded-xl border-gray-200 p-3 border-2 focus:ring-blue-500 bg-white">
                         <option value="">請選擇</option>
-                        <option value="第一階段">第一階段</option>
-                        <option value="第二階段">第二階段</option>
-                        <option value="第三階段">第三階段</option>
-                        <option value="第四階段">第四階段</option>
-                        <option value="第五階段">第五階段</option>
-                        <option value="第六階段">第六階段</option>
-                        <option value="第七階段">第七階段</option>
-                        <option value="第八階段">第八階段</option>
-                        <option value="第九階段">第九階段</option>
-                        <option value="第十階段">第十階段</option>
-                        <option value="第十一階段">第十一階段</option>
-                        <option value="第十二階段">第十二階段</option>
                     </select>
                 </div>
             </div>
 
-            <div class="bg-blue-50/50 p-4 rounded-2xl space-y-3 border border-blue-100">
+            <div class="bg-blue-50/50 p-4 rounded-2xl space-y-2 border border-blue-100">
                 <div class="flex flex-col">
-                    <span class="text-[14px] font-black text-blue-400 uppercase tracking-widest">Prize Content / 獎品</span>
-                    <span id="prizeContent" class="text-sm text-slate-700 font-bold leading-relaxed">-</span>
+                    <span class="text-[12px] font-black text-blue-400 uppercase tracking-widest">Prize Content</span>
+                    <span id="prizeContent" class="text-sm text-slate-700 font-bold">-</span>
                 </div>
                 <div class="flex flex-col border-t border-blue-100 pt-2">
-                    <span class="text-[14x] font-black text-amber-500 uppercase tracking-widest">Notes / 備註</span>
+                    <span class="text-[12px] font-black text-amber-500 uppercase tracking-widest">Notes</span>
                     <span id="prizeNote" class="text-sm text-amber-800">-</span>
                 </div>
             </div>
 
-            <button id="submitBtn" onclick="sendData()" class="w-full bg-blue-600 text-white font-bold py-4 rounded-2xl hover:bg-blue-700 shadow-lg shadow-blue-200 transition-all duration-300 disabled:bg-slate-300 disabled:shadow-none flex items-center justify-center gap-2 text-lg">
-                確認匯入資料
+            <button id="submitBtn" onclick="sendData()" class="w-full bg-blue-600 text-white font-bold py-4 rounded-2xl hover:bg-blue-700 shadow-lg shadow-blue-200 transition-all duration-300 disabled:bg-slate-300 flex items-center justify-center gap-2 text-lg">
+                確認批次匯入資料
             </button>
         </div>
     </div>
 
     <script>
         const prizeData = {
-            "特別獎": { content: "一齊發~商品抵用劵_17,800元", note: "需身分證" },
-            "頭獎": { content: "一路發~商品抵用劵_16,800元", note: "需身分證" },
-            "二獎": { content: "土農讓你發~商品抵用劵_8,800元", note: "需身分證" },
-            "三獎": { content: "六六大順~商品抵用劵_6,000元", note: "需身分證" },
-            "四獎": { content: "月來越美麗富貴一整年富麗米12包(分次領取)", note: "可兌換商品抵用劵4,100元、需身分證" },
-            "五獎": { content: "月月歡囍願望成真囍願蛋12盒(分次領取)", note: "可兌換商品抵用劵2,800元、需身分證" },
-            "六獎": { content: "龍鳳呈祥好運年菜", note: "可兌換商品抵用劵2,300元、需身分證" }
+            "特別獎": { content: "一發衝天｜商品抵用券18,800元", note: "需身分證" },
+            "頭獎": { content: "一路發財｜商品抵用券16,800元", note: "需身分證" },
+            "二獎": { content: "八方來財｜商品抵用券8,000元", note: "需身分證" },
+            "三獎": { content: "祿馬交馳｜商品抵用券6,000元", note: "需身分證" },
+            "四獎": { content: "三陽開泰｜商品抵用券3,000元", note: "需身分證" },
+            "五獎": { content: "接二連三｜商品抵用券2,600元", note: "需身分證" },
+            "六獎": { content: "好運溜溜｜商品抵用券2,000元", note: "需身分證" },
+            "七獎": { content: "好事成雙｜商品抵用券1,600元", note: "需身分證" },
+            "八獎": { content: "一路領先｜商品抵用券1,200元", note: "需身分證" },
+            "九獎": { content: "一馬當先｜商品抵用券1,000元", note: "需身分證" },
+            "十獎": { content: "米多禮｜金磚米", note: "" },
+            "十一獎": { content: "紘裕｜玉馬呈祥素食宴年菜組", note: "" },
+            "十二獎": { content: "丞昀｜鰻魚米糕", note: "" },
+            "十三獎": { content: "王信勛｜魚池小香菇", note: "" },
+            "十四獎": { content: "丞昀｜叫化雞米糕", note: "" },
+            "十五獎": { content: "新北市農會｜清潔組合(洗衣球+洗碗精+洗手乳)", note: "" },
+            "十六獎": { content: "喬麥屋｜8入麵禮盒", note: "" },
+            "十七獎": { content: "清泉果園｜茂谷柑禮盒", note: "" },
+            "十八獎": { content: "振楠｜雙色蛋", note: "" },
+            "十九獎": { content: "順羽｜囍願蛋", note: "" },
+            "二十獎": { content: "顏式畜牧場｜黃金養生蛋", note: "" },
         };
 
+        const prizeToStages = {
+            "特別獎": ["第五階段", "第九階段"],
+            "頭獎": ["第一階段"],
+            "二獎": ["第九階段"],
+            "三獎": ["第九階段"],
+            "四獎": ["第八階段"],
+            "五獎": ["第八階段"],
+            "六獎": ["第七階段", "第八階段"],
+            "七獎": ["第五階段", "第六階段"],
+            "八獎": ["第三階段", "第四階段", "第五階段", "第六階段", "第七階段", "第八階段"],
+            "九獎": ["第二階段", "第三階段", "第四階段", "第五階段", "第六階段", "第七階段"],
+            "十獎": ["第二階段", "第三階段", "第四階段"],
+            "十一獎": ["第二階段"],
+            "十二獎": ["第二階段"],
+            "十三獎": ["第二階段"],
+            "十四獎": ["第二階段"],
+            "十五獎": ["第一階段"],
+            "十六獎": ["第一階段"],
+            "十七獎": ["第一階段"],
+            "十八獎": ["第一階段"],
+            "十九獎": ["第一階段"],
+            "二十獎": ["第一階段"]
+        };
+        
         const html5QrCode = new Html5Qrcode("reader");
         const qrConfig = { fps: 20, qrbox: { width: 250, height: 250 } };
+        let lastScanned = ""; // 防止重複瞬間掃描同一張
 
         function startScanner() {
-            resetForm();
             document.getElementById('reader').classList.remove('hidden');
             document.getElementById('startBtn').classList.add('hidden');
+            document.getElementById('stopBtn').classList.remove('hidden');
             
             html5QrCode.start({ facingMode: "environment" }, qrConfig, (decodedText) => {
-                document.getElementById('ticketNumber').value = decodedText;
-                stopScanner();
-                // 震動回饋 (手機端支援)
-                if (navigator.vibrate) navigator.vibrate(100);
+                if(decodedText !== lastScanned) {
+                    lastScanned = decodedText;
+                    const area = document.getElementById('ticketNumbers');
+                    // 先用 .trim() 把框框內「看不見的換行或空白」抓出來清除掉
+                    const currentVal = area.value.trim(); 
+
+                    // 如果清除後是空的，就直接放號碼；如果不是空的，才加換行
+                    area.value = (currentVal === "" ? "" : currentVal + "\n") + decodedText;
+                    
+                    updateCount();
+                    
+                    if (navigator.vibrate) navigator.vibrate(100);
+                    
+                    // 提示音效或視覺回饋
+                    Swal.showLoading();
+                    setTimeout(() => { Swal.close(); }, 500);
+                }
             }).catch(err => {
                 Swal.fire('錯誤', '相機啟動失敗', 'error');
                 stopScanner();
@@ -126,16 +188,28 @@
             html5QrCode.stop().then(() => {
                 document.getElementById('reader').classList.add('hidden');
                 document.getElementById('startBtn').classList.remove('hidden');
+                document.getElementById('stopBtn').classList.add('hidden');
+                lastScanned = "";
             }).catch(() => {
                 document.getElementById('reader').classList.add('hidden');
                 document.getElementById('startBtn').classList.remove('hidden');
+                document.getElementById('stopBtn').classList.add('hidden');
             });
+        }
+
+        function updateCount() {
+            const text = document.getElementById('ticketNumbers').value;
+            const count = text.split('\n').filter(line => line.trim() !== "").length;
+            document.getElementById('countBadge').innerText = `共 ${count} 筆`;
         }
 
         function updatePrizeDetails() {
             const category = document.getElementById('prizeCategory').value;
             const content = document.getElementById('prizeContent');
             const note = document.getElementById('prizeNote');
+            const stageSelect = document.getElementById('stage'); // 取得階段選單
+
+            // 1. 更新獎項內容文字
             if (category && prizeData[category]) {
                 content.innerText = prizeData[category].content;
                 note.innerText = prizeData[category].note;
@@ -143,28 +217,50 @@
                 content.innerText = "-";
                 note.innerText = "-";
             }
+
+            // 2. 更新階段選單內容
+            // 先清空目前的選項，只保留「請選擇」
+            stageSelect.innerHTML = '<option value="">請選擇</option>';
+
+            if (category && prizeToStages[category]) {
+                // 根據對照表，動態產生新的 <option>
+                prizeToStages[category].forEach(stage => {
+                    const option = document.createElement('option');
+                    option.value = stage;
+                    option.textContent = stage;
+                    stageSelect.appendChild(option);
+                });
+        
+                // 如果該獎項只有一個階段，自動幫使用者選好
+                if (prizeToStages[category].length === 1) {
+                    stageSelect.value = prizeToStages[category][0];
+                }
+            }
         }
 
         async function sendData() {
-            const ticketNum = document.getElementById('ticketNumber').value;
+            const rawText = document.getElementById('ticketNumbers').value;
+            const ticketList = rawText.split('\n').map(t => t.trim()).filter(t => t !== "");
             const prize = document.getElementById('prizeCategory').value;
             const stage = document.getElementById('stage').value;
             const btn = document.getElementById('submitBtn');
 
-            if (!ticketNum) return Swal.fire('提示', '請先掃描或輸入號碼', 'warning');
+            if (ticketList.length === 0) return Swal.fire('提示', '請先輸入票號', 'warning');
             if (!prize) return Swal.fire('提示', '請選擇獎次', 'warning');
-            if (!stage) return Swal.fire('提示', '請選擇抽獎階段', 'warning');
+            if (!stage) return Swal.fire('提示', '請選擇階段', 'warning');
 
             btn.disabled = true;
-            btn.innerHTML = `<svg class="animate-spin h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg> 處理中...`;
+            btn.innerHTML = `傳送中 (${ticketList.length} 筆)...`;
 
             try {
-                const response = await fetch("https://buck-decent-bobcat.ngrok-free.app/webhook/new_bingo", {
+                // https://buck-decent-bobcat.ngrok-free.app/webhook/new_bingo
+                // https://projectboy-n8n-free.hf.space/webhook/new_bingo
+                const response = await fetch("https://projectboy-n8n-free.hf.space/webhook/new_bingo", {
                     method: "POST",
                     headers: { "Content-Type": "application/json" },
                     body: JSON.stringify({
-                        action: "input", // <--- 新增的屬性，用於 n8n 判斷
-                        ticket_number: ticketNum,
+                        action: "input_batch",
+                        ticket_numbers: ticketList,
                         prize_category: prize,
                         draw_stage: stage,
                         prize_content: document.getElementById('prizeContent').innerText,
@@ -174,48 +270,40 @@
 
                 const resultText = await response.text();
 
-                // 根據回傳文字動態顯示 SweetAlert2
-                if (resultText.includes("成功")) {
+                if (response.ok) {
                     await Swal.fire({
                         icon: 'success',
-                        title: '成功',
-                        text: resultText,
-                        confirmButtonColor: '#2563eb',
-                        timer: 2000
+                        title: '匯入完成',
+                        text: resultText || `成功匯入 ${ticketList.length} 筆資料`,
+                        confirmButtonColor: '#2563eb'
                     });
                     resetForm();
-                } else if (resultText.includes("存在")) {
-                    await Swal.fire({
-                        icon: 'warning',
-                        title: '重複提示',
-                        text: resultText,
-                        confirmButtonColor: '#f59e0b'
-                    });
-                    btn.disabled = false;
-                    btn.innerText = "確認匯入資料";
                 } else {
-                    await Swal.fire('回應', resultText, 'info');
-                    btn.disabled = false;
-                    btn.innerText = "確認匯入資料";
+                    throw new Error(resultText);
                 }
 
             } catch (error) {
-                Swal.fire('失敗', '網路連線異常，請檢查環境', 'error');
+                Swal.fire('失敗', '傳送過程發生錯誤：' + error.message, 'error');
+            } finally {
                 btn.disabled = false;
-                btn.innerText = "確認匯入資料";
+                btn.innerText = "確認批次匯入資料";
             }
         }
 
         function resetForm() {
-            document.getElementById('ticketNumber').value = "";
+            document.getElementById('ticketNumbers').value = "";
             document.getElementById('prizeCategory').value = "";
             document.getElementById('stage').value = "";
             document.getElementById('prizeContent').innerText = "-";
             document.getElementById('prizeNote').innerText = "-";
-            const btn = document.getElementById('submitBtn');
-            btn.disabled = false;
-            btn.innerText = "確認匯入資料";
+            updateCount();
+            if (document.getElementById('startBtn').classList.contains('hidden')) {
+                stopScanner();
+            }
         }
     </script>
 </body>
+
 </html>
+
+
