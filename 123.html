@@ -1,0 +1,126 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>QR Code 兌獎系統</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.3.2/papaparse.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/jsqr@1.4.0/dist/jsQR.min.js"></script>
+    <style>
+        body { font-family: sans-serif; text-align: center; background: #f4f4f4; margin: 0; padding: 20px; }
+        #preview { width: 100%; max-width: 400px; border: 5px solid #333; border-radius: 10px; margin: 10px auto; display: block; }
+        #status { font-size: 1.2rem; margin: 20px; font-weight: bold; }
+        .win { color: #d9534f; background: #fff; padding: 20px; border-radius: 10px; border: 2px solid #d9534f; }
+        .lose { color: #5bc0de; }
+        #loading { color: #888; }
+        button { padding: 10px 20px; font-size: 1rem; cursor: pointer; background: #007bff; color: white; border: none; border-radius: 5px; }
+    </style>
+</head>
+<body>
+
+    <h1>🎁 掃描 QR Code 兌獎</h1>
+    <div id="loading">正在載入中獎名單...</div>
+    
+    <canvas id="preview" hidden></canvas>
+    <div id="status">請允許開啟相機以進行掃描</div>
+    
+    <div id="result-area"></div>
+
+    <br>
+    <button onclick="startScan()">重新掃描</button>
+
+    <script>
+        const CSV_URL = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vSkwZLmao8afS8265szRVJHa3s6tFRcS2pEc51_9k92ZS4VmYugFodOfaSYHY8xCSf_5xxwrJf5Epob/pub?gid=31666847&single=true&output=csv';
+        let lotteryData = [];
+        let video = document.createElement("video");
+        let canvasElement = document.getElementById("preview");
+        let canvas = canvasElement.getContext("2d");
+        let isScanning = false;
+
+        // 1. 抓取 Excel (CSV) 資料
+        function fetchLotteryData() {
+            Papa.parse(CSV_URL, {
+                download: true,
+                header: true,
+                complete: function(results) {
+                    lotteryData = results.data;
+                    document.getElementById('loading').innerText = "✅ 名單載入成功，請開始掃描！";
+                    startScan();
+                },
+                error: function(err) {
+                    document.getElementById('loading').innerText = "❌ 載入資料失敗，請檢查連結。";
+                }
+            });
+        }
+
+        // 2. 開啟攝影機
+        function startScan() {
+            document.getElementById('result-area').innerHTML = "";
+            document.getElementById('status').innerText = "掃描中...";
+            isScanning = true;
+            
+            navigator.mediaDevices.getUserMedia({ video: { facingMode: "environment" } }).then(function(stream) {
+                video.srcObject = stream;
+                video.setAttribute("playsinline", true);
+                video.play();
+                requestAnimationFrame(tick);
+            });
+        }
+
+        // 3. 掃描邏輯
+        function tick() {
+            if (video.readyState === video.HAVE_ENOUGH_DATA && isScanning) {
+                canvasElement.hidden = false;
+                canvasElement.height = video.videoHeight;
+                canvasElement.width = video.videoWidth;
+                canvas.drawImage(video, 0, 0, canvasElement.width, canvasElement.height);
+                
+                let imageData = canvas.getImageData(0, 0, canvasElement.width, canvasElement.height);
+                let code = jsQR(imageData.data, imageData.width, imageData.height, {
+                    inversionAttempts: "dontInvert",
+                });
+
+                if (code) {
+                    isScanning = false;
+                    checkPrize(code.data); // 觸發比對
+                }
+            }
+            if (isScanning) requestAnimationFrame(tick);
+        }
+
+        // 4. 比對兌獎邏輯
+        function checkPrize(scannedCode) {
+            // 停止攝影機
+            video.srcObject.getTracks().forEach(track => track.stop());
+            canvasElement.hidden = true;
+
+            // 在 CSV 資料中尋找比對
+            // 假設你的 Excel 第一欄標題叫 "兌獎碼"，第二欄叫 "獎項"
+            const winner = lotteryData.find(row => row['兌獎碼'] === scannedCode.trim());
+
+            const resultArea = document.getElementById('result-area');
+            if (winner) {
+                resultArea.innerHTML = `
+                    <div class="win">
+                        <h2>🎉 恭喜中獎！</h2>
+                        <p>您的編號：${scannedCode}</p>
+                        <p>獲得獎項：<strong>${winner['獎項'] || '點獎'}</strong></p>
+                    </div>
+                `;
+                document.getElementById('status').innerText = "中獎了！";
+            } else {
+                resultArea.innerHTML = `
+                    <div class="lose">
+                        <h2>😅 沒中獎</h2>
+                        <p>編號 ${scannedCode} 不在名單中</p>
+                    </div>
+                `;
+                document.getElementById('status').innerText = "下次會更好！";
+            }
+        }
+
+        // 初始化
+        window.onload = fetchLotteryData;
+    </script>
+</body>
+</html>
