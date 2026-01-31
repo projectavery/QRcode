@@ -3,124 +3,175 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>QR Code 兌獎系統</title>
+    <title>自動對獎系統</title>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.3.2/papaparse.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/jsqr@1.4.0/dist/jsQR.min.js"></script>
     <style>
-        body { font-family: sans-serif; text-align: center; background: #f4f4f4; margin: 0; padding: 20px; }
-        #preview { width: 100%; max-width: 400px; border: 5px solid #333; border-radius: 10px; margin: 10px auto; display: block; }
-        #status { font-size: 1.2rem; margin: 20px; font-weight: bold; }
-        .win { color: #d9534f; background: #fff; padding: 20px; border-radius: 10px; border: 2px solid #d9534f; }
-        .lose { color: #5bc0de; }
-        #loading { color: #888; }
-        button { padding: 10px 20px; font-size: 1rem; cursor: pointer; background: #007bff; color: white; border: none; border-radius: 5px; }
+        :root { --primary-color: #4CAF50; --error-color: #f44336; }
+        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background-color: #f0f2f5; margin: 0; padding: 20px; display: flex; justify-content: center; }
+        .card { background: white; width: 100%; max-width: 450px; padding: 25px; border-radius: 20px; box-shadow: 0 10px 25px rgba(0,0,0,0.1); text-align: center; }
+        h1 { color: #333; margin-bottom: 5px; }
+        #loading-status { font-size: 0.9rem; margin-bottom: 20px; color: #666; padding: 10px; border-radius: 10px; background: #eee; }
+        
+        /* 輸入框設計 */
+        .input-box { display: flex; gap: 8px; margin-bottom: 20px; }
+        input[type="text"] { flex: 1; padding: 12px; border: 2px solid #ddd; border-radius: 10px; font-size: 16px; outline: none; }
+        input[type="text"]:focus { border-color: var(--primary-color); }
+        
+        /* 按鈕設計 */
+        button { cursor: pointer; border: none; border-radius: 10px; transition: 0.3s; font-weight: bold; }
+        .btn-check { background: var(--primary-color); color: white; padding: 0 20px; }
+        .btn-scan { background: #333; color: white; width: 100%; padding: 15px; margin-top: 10px; font-size: 1rem; }
+        button:active { transform: scale(0.98); }
+
+        /* 顯示畫面 */
+        #preview { width: 100%; border-radius: 15px; margin: 15px 0; background: #000; display: none; }
+        .result-box { margin-top: 25px; padding: 20px; border-radius: 15px; animation: fadeIn 0.5s; }
+        .win { background: #e8f5e9; border: 2px solid #4CAF50; color: #2e7d32; }
+        .lose { background: #ffebee; border: 2px solid #f44336; color: #c62828; }
+        
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
     </style>
 </head>
 <body>
 
-    <h1>🎁 掃描 QR Code 兌獎</h1>
-    <div id="loading">正在載入中獎名單...</div>
-    
-    <canvas id="preview" hidden></canvas>
-    <div id="status">請允許開啟相機以進行掃描</div>
-    
-    <div id="result-area"></div>
+<div class="card">
+    <h1>🎁 兌獎小幫手</h1>
+    <div id="loading-status">📡 正在連線資料庫...</div>
 
-    <br>
-    <button onclick="startScan()">重新掃描</button>
+    <div class="input-box">
+        <input type="text" id="manualInput" placeholder="請輸入兌獎號碼">
+        <button class="btn-check" onclick="handleInput()">兌獎</button>
+    </div>
 
-    <script>
-        const CSV_URL = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vSkwZLmao8afS8265szRVJHa3s6tFRcS2pEc51_9k92ZS4VmYugFodOfaSYHY8xCSf_5xxwrJf5Epob/pub?gid=31666847&single=true&output=csv';
-        let lotteryData = [];
-        let video = document.createElement("video");
-        let canvasElement = document.getElementById("preview");
-        let canvas = canvasElement.getContext("2d");
-        let isScanning = false;
+    <div style="color: #999; font-size: 0.8rem;">— 或者 —</div>
 
-        // 1. 抓取 Excel (CSV) 資料
-        function fetchLotteryData() {
-            Papa.parse(CSV_URL, {
-                download: true,
-                header: true,
-                complete: function(results) {
-                    lotteryData = results.data;
-                    document.getElementById('loading').innerText = "✅ 名單載入成功，請開始掃描！";
-                    startScan();
-                },
-                error: function(err) {
-                    document.getElementById('loading').innerText = "❌ 載入資料失敗，請檢查連結。";
+    <canvas id="preview"></canvas>
+    <button id="scanBtn" class="btn-scan" onclick="startScan()">📷 開啟相機掃描</button>
+    <div id="video-msg" style="margin-top:10px; color: #666; font-size: 0.8rem;"></div>
+
+    <div id="result-display"></div>
+</div>
+
+<script>
+    const CSV_URL = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vSkwZLmao8afS8265szRVJHa3s6tFRcS2pEc51_9k92ZS4VmYugFodOfaSYHY8xCSf_5xxwrJf5Epob/pub?gid=31666847&single=true&output=csv';
+    let db = [];
+    let video = document.createElement("video");
+    let canvas = document.getElementById("preview");
+    let ctx = canvas.getContext("2d", { willReadFrequently: true });
+    let isScanning = false;
+
+    // 1. 初始化：抓取 Google Sheets CSV
+    async function initData() {
+        Papa.parse(CSV_URL, {
+            download: true,
+            header: true,
+            skipEmptyLines: true,
+            complete: (results) => {
+                db = results.data;
+                if (db.length > 0) {
+                    document.getElementById('loading-status').innerHTML = "✅ 資料連線成功！可以開始兌獎";
+                    document.getElementById('loading-status').style.background = "#e8f5e9";
                 }
-            });
-        }
+            },
+            error: () => {
+                document.getElementById('loading-status').innerHTML = "❌ 資料載入失敗，請確認網路連線";
+                document.getElementById('loading-status').style.background = "#ffebee";
+            }
+        });
+    }
 
-        // 2. 開啟攝影機
-        function startScan() {
-            document.getElementById('result-area').innerHTML = "";
-            document.getElementById('status').innerText = "掃描中...";
-            isScanning = true;
-            
-            navigator.mediaDevices.getUserMedia({ video: { facingMode: "environment" } }).then(function(stream) {
+    // 2. 手動輸入判斷
+    function handleInput() {
+        const inputVal = document.getElementById('manualInput').value.trim();
+        if (!inputVal) return alert("請輸入號碼");
+        stopScan();
+        checkPrize(inputVal);
+    }
+
+    // 3. 核心兌獎邏輯
+    function checkPrize(code) {
+        if (db.length === 0) return alert("資料尚未載入，請稍後再試");
+
+        // 自動取得第一欄與第二欄的標題名稱
+        const keys = Object.keys(db[0]);
+        const idKey = keys[0];    // 第一欄通常是 兌獎碼
+        const prizeKey = keys[1]; // 第二欄通常是 獎項
+
+        // 比對資料 (去除前後空格，強制轉字串)
+        const match = db.find(row => 
+            String(row[idKey]).trim().toLowerCase() === String(code).trim().toLowerCase()
+        );
+
+        const display = document.getElementById('result-display');
+        if (match) {
+            display.innerHTML = `
+                <div class="result-box win">
+                    <div style="font-size: 2rem;">🎊</div>
+                    <div style="font-size: 1.2rem; font-weight: bold;">恭喜中獎！</div>
+                    <div style="margin-top: 10px;">編號：${code}</div>
+                    <div style="font-size: 1.5rem; margin-top: 10px;">🏆 ${match[prizeKey] || '精美小禮'}</div>
+                </div>
+            `;
+        } else {
+            display.innerHTML = `
+                <div class="result-box lose">
+                    <div style="font-size: 2rem;">☁️</div>
+                    <div style="font-size: 1.2rem; font-weight: bold;">未中獎</div>
+                    <div>號碼 ${code} 不在名單中</div>
+                </div>
+            `;
+        }
+    }
+
+    // 4. 掃描功能
+    function startScan() {
+        isScanning = true;
+        document.getElementById('result-display').innerHTML = "";
+        document.getElementById('scanBtn').style.display = "none";
+        canvas.style.display = "block";
+
+        navigator.mediaDevices.getUserMedia({ video: { facingMode: "environment" } })
+            .then(stream => {
                 video.srcObject = stream;
                 video.setAttribute("playsinline", true);
                 video.play();
                 requestAnimationFrame(tick);
+            })
+            .catch(err => {
+                alert("無法開啟相機，請檢查權限設定");
+                stopScan();
             });
-        }
+    }
 
-        // 3. 掃描邏輯
-        function tick() {
-            if (video.readyState === video.HAVE_ENOUGH_DATA && isScanning) {
-                canvasElement.hidden = false;
-                canvasElement.height = video.videoHeight;
-                canvasElement.width = video.videoWidth;
-                canvas.drawImage(video, 0, 0, canvasElement.width, canvasElement.height);
-                
-                let imageData = canvas.getImageData(0, 0, canvasElement.width, canvasElement.height);
-                let code = jsQR(imageData.data, imageData.width, imageData.height, {
-                    inversionAttempts: "dontInvert",
-                });
-
-                if (code) {
-                    isScanning = false;
-                    checkPrize(code.data); // 觸發比對
-                }
-            }
-            if (isScanning) requestAnimationFrame(tick);
-        }
-
-        // 4. 比對兌獎邏輯
-        function checkPrize(scannedCode) {
-            // 停止攝影機
+    function stopScan() {
+        isScanning = false;
+        if (video.srcObject) {
             video.srcObject.getTracks().forEach(track => track.stop());
-            canvasElement.hidden = true;
+        }
+        canvas.style.display = "none";
+        document.getElementById('scanBtn').style.display = "block";
+    }
 
-            // 在 CSV 資料中尋找比對
-            // 假設你的 Excel 第一欄標題叫 "兌獎碼"，第二欄叫 "獎項"
-            const winner = lotteryData.find(row => row['兌獎碼'] === scannedCode.trim());
+    function tick() {
+        if (video.readyState === video.HAVE_ENOUGH_DATA && isScanning) {
+            canvas.height = video.videoHeight;
+            canvas.width = video.videoWidth;
+            ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+            const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+            const code = jsQR(imageData.data, imageData.width, imageData.height);
 
-            const resultArea = document.getElementById('result-area');
-            if (winner) {
-                resultArea.innerHTML = `
-                    <div class="win">
-                        <h2>🎉 恭喜中獎！</h2>
-                        <p>您的編號：${scannedCode}</p>
-                        <p>獲得獎項：<strong>${winner['獎項'] || '點獎'}</strong></p>
-                    </div>
-                `;
-                document.getElementById('status').innerText = "中獎了！";
-            } else {
-                resultArea.innerHTML = `
-                    <div class="lose">
-                        <h2>😅 沒中獎</h2>
-                        <p>編號 ${scannedCode} 不在名單中</p>
-                    </div>
-                `;
-                document.getElementById('status').innerText = "下次會更好！";
+            if (code) {
+                stopScan();
+                checkPrize(code.data);
+                return;
             }
         }
+        if (isScanning) requestAnimationFrame(tick);
+    }
 
-        // 初始化
-        window.onload = fetchLotteryData;
-    </script>
+    window.onload = initData;
+</script>
+
 </body>
 </html>
