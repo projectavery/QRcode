@@ -1,0 +1,271 @@
+<!doctype html>
+<html lang="zh-Hant">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>存匯考題重點彙整</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Noto+Serif+TC:wght@500;700&family=Noto+Sans+TC:wght@400;500;700&family=IBM+Plex+Mono:wght@400;500&display=swap">
+<style>
+:root{
+  --ground:#F1F4F1;--surface:#FFFFFF;--surface-2:#E8EDE9;
+  --ink:#15201D;--ink-2:#3C4A46;--muted:#6E7D78;
+  --line:#D3DBD6;--line-strong:#B4C0BA;
+  --accent:#1F5C4C;--accent-soft:#E0EBE5;--accent-on:#FFFFFF;
+  --seal:#A32E22;--seal-soft:#F6E4E1;
+}
+@media (prefers-color-scheme:dark){
+  :root:not([data-theme="light"]){
+    --ground:#0F1513;--surface:#171F1C;--surface-2:#1E2724;
+    --ink:#E3EAE6;--ink-2:#B6C3BE;--muted:#869892;
+    --line:#2A3532;--line-strong:#3A4844;
+    --accent:#6FBFA1;--accent-soft:#1B2E28;--accent-on:#0F1513;
+    --seal:#E38C7F;--seal-soft:#33201D;
+  }
+}
+:root[data-theme="dark"]{
+  --ground:#0F1513;--surface:#171F1C;--surface-2:#1E2724;
+  --ink:#E3EAE6;--ink-2:#B6C3BE;--muted:#869892;
+  --line:#2A3532;--line-strong:#3A4844;
+  --accent:#6FBFA1;--accent-soft:#1B2E28;--accent-on:#0F1513;
+  --seal:#E38C7F;--seal-soft:#33201D;
+}
+
+*{box-sizing:border-box}
+html{-webkit-text-size-adjust:100%}
+body{
+  margin:0;background:var(--ground);color:var(--ink);
+  font-family:"Noto Sans TC","Microsoft JhengHei","PingFang TC",sans-serif;
+  font-size:16px;line-height:1.7;font-feature-settings:"palt" 1;
+}
+.wrap{max-width:62rem;margin:0 auto;padding:clamp(1.5rem,4vw,4rem) clamp(1rem,4vw,2.5rem) 5rem}
+
+.mast{border-bottom:2px solid var(--ink);padding-bottom:1.5rem;margin-bottom:2rem}
+.eyebrow{
+  font-family:"IBM Plex Mono",ui-monospace,monospace;
+  font-size:.72rem;letter-spacing:.18em;text-transform:uppercase;
+  color:var(--accent);margin:0 0 .85rem;display:flex;flex-wrap:wrap;gap:.6rem;align-items:center;
+}
+.eyebrow .dot{width:5px;height:5px;border-radius:50%;background:var(--seal);flex:none}
+h1{
+  font-family:"Noto Serif TC","Source Han Serif TC","PMingLiU",serif;
+  font-weight:700;font-size:clamp(1.85rem,5vw,2.6rem);line-height:1.25;margin:0;text-wrap:balance;
+}
+.lede{color:var(--ink-2);margin:.9rem 0 0;max-width:40em;font-size:1.02rem}
+
+.warn{
+  background:var(--seal-soft);color:var(--seal);border-radius:3px;
+  padding:.95rem 1.2rem;margin:1.4rem 0 0;font-size:.94rem;
+}
+
+.sec{margin:0 0 2.75rem}
+.sec-head{
+  display:flex;align-items:baseline;gap:.9rem;flex-wrap:wrap;
+  border-bottom:1px solid var(--line-strong);padding-bottom:.6rem;margin-bottom:1.1rem;
+}
+.sec-head h2{
+  font-family:"Noto Serif TC","Source Han Serif TC","PMingLiU",serif;
+  font-size:1.3rem;margin:0;font-weight:700;
+}
+.sec-head .tag{font-family:"IBM Plex Mono",ui-monospace,monospace;font-size:.76rem;color:var(--muted);letter-spacing:.08em}
+
+.tbl{width:100%;overflow-x:auto;border:1px solid var(--line);border-radius:3px;background:var(--surface)}
+table{border-collapse:collapse;width:100%;min-width:38rem;font-size:.94rem}
+thead th{
+  font-family:"IBM Plex Mono",ui-monospace,monospace;font-weight:500;
+  font-size:.66rem;letter-spacing:.12em;text-transform:uppercase;color:var(--muted);
+  text-align:left;padding:.7rem .9rem;border-bottom:1px solid var(--line-strong);white-space:nowrap;
+}
+tbody td{padding:.75rem .9rem;border-bottom:1px solid var(--line);vertical-align:top}
+tbody tr:last-child td{border-bottom:none}
+td.num{
+  font-family:"IBM Plex Mono",ui-monospace,monospace;font-size:.8rem;color:var(--accent);
+  font-variant-numeric:tabular-nums;width:2.6rem;white-space:nowrap;
+}
+td.topic{width:17rem;font-weight:500}
+td.ans strong{color:var(--accent)}
+td.tc{
+  font-family:"IBM Plex Mono",ui-monospace,monospace;font-size:.8rem;color:var(--muted);
+  font-variant-numeric:tabular-nums;width:4rem;white-space:nowrap;
+}
+.x{color:var(--seal);font-weight:700}
+.unsure{color:var(--seal);border-bottom:1px dotted currentColor}
+
+ol.key{list-style:none;counter-reset:k;margin:0;padding:0;display:flex;flex-direction:column;gap:.15rem}
+ol.key li{
+  counter-increment:k;display:grid;grid-template-columns:2.2rem 1fr;gap:1rem;
+  padding:.9rem 0;border-bottom:1px solid var(--line);
+}
+ol.key li:last-child{border-bottom:none}
+ol.key li::before{
+  content:counter(k);font-family:"IBM Plex Mono",ui-monospace,monospace;
+  font-size:1.05rem;color:var(--accent);padding-top:.05rem;
+}
+ol.key h3{margin:0;font-size:1rem;font-weight:700}
+ol.key p{margin:.2rem 0 0;color:var(--ink-2);font-size:.94rem}
+
+.terms .grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(13rem,1fr));gap:1px;background:var(--line);border:1px solid var(--line);border-radius:3px;overflow:hidden}
+.terms .grid div{background:var(--surface);padding:.6rem 1rem;display:flex;align-items:baseline;gap:.6rem;font-size:.92rem}
+.terms .bad{color:var(--seal);text-decoration:line-through;text-decoration-color:var(--line-strong)}
+.terms .arrow{color:var(--muted);font-size:.8rem}
+.terms .good{font-weight:700;color:var(--accent)}
+.after{color:var(--ink-2);font-size:.94rem;margin:1.1rem 0 0}
+
+.foot{
+  margin-top:3.5rem;padding-top:1.25rem;border-top:1px solid var(--line);
+  display:flex;flex-wrap:wrap;gap:1rem;justify-content:space-between;align-items:center;
+  font-size:.85rem;color:var(--muted);
+}
+.foot a{color:var(--accent);text-decoration:none;border-bottom:1px solid var(--accent-soft);padding-bottom:1px}
+.foot a:hover{border-bottom-color:currentColor}
+a:focus-visible{outline:2px solid var(--accent);outline-offset:3px;border-radius:2px}
+
+@media print{
+  body{background:#fff;font-size:10.5pt}
+  .wrap{max-width:none;padding:0}
+  tbody tr,ol.key li{break-inside:avoid}
+  .foot a{border:none}
+}
+@media (prefers-reduced-motion:reduce){*{animation:none !important;transition:none !important}}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+<header class="mast">
+  <p class="eyebrow"><span class="dot"></span>存匯業務考題講解 · 重點彙整</p>
+  <h1>存匯考題重點彙整</h1>
+  <p class="lede">講師以快問快答方式複習存匯業務考題，逐題點出「哪一個選項是錯的」並說明正確作法，共涵蓋 <strong>24 個考點</strong>：定期存款計息、轉期續存、印鑑留存、票據掛失止付與平行線、開戶資格限制，以及贈與稅免稅額。</p>
+  <p class="warn">本錄音為語音辨識產物，專業術語與數字可能有誤。<strong>準備考試請以正式教材或法規條文為準</strong>，本彙整僅供快速複習與定位錄音段落之用。</p>
+</header>
+
+<section class="sec">
+  <div class="sec-head"><h2>A　存款計息與期別</h2><span class="tag">7 題</span></div>
+  <div class="tbl">
+    <table>
+      <thead><tr><th>#</th><th>考點</th><th>正確答案</th><th>時間</th></tr></thead>
+      <tbody>
+        <tr><td class="num">01</td><td class="topic">定期存款<strong>中途解約</strong>適用利率</td><td class="ans">適用<strong>較短存期</strong>之牌告利率，再<strong>打八折</strong></td><td class="tc">00:00</td></tr>
+        <tr><td class="num">02</td><td class="topic">定期存款<strong>逾期提取</strong>的利息</td><td class="ans">逾期期間按<strong>活期存款</strong>利率<strong>單利</strong>計息<br><span class="x">✗</span> 錯誤選項：按定期存款牌告利率</td><td class="tc">00:20</td></tr>
+        <tr><td class="num">03</td><td class="topic">定期儲蓄存款到期後辦理<strong>轉期續存</strong>期限</td><td class="ans">到期後 <strong>2 個月</strong>內（轉期續存＝轉存相同存期）</td><td class="tc">00:56</td></tr>
+        <tr><td class="num">04</td><td class="topic"><span class="unsure">〔?題目不清〕</span>的天數</td><td class="ans"><strong>7 天</strong></td><td class="tc">01:17</td></tr>
+        <tr><td class="num">05</td><td class="topic">小額<strong>跨行轉帳</strong>免手續費</td><td class="ans"><strong>500 元</strong>以下，每日 <strong>1 次</strong>免收</td><td class="tc">01:21</td></tr>
+        <tr><td class="num">14</td><td class="topic">定期儲蓄存款<strong>存期</strong></td><td class="ans"><strong>1 年以上</strong><br><span class="x">✗</span> 錯誤選項：至少 1 個月以上</td><td class="tc">04:03</td></tr>
+        <tr><td class="num">15</td><td class="topic">轉期續存的<strong>起算日</strong></td><td class="ans">以<strong>轉存日</strong>起算<br><span class="x">✗</span> 錯誤選項：以原到期日起算</td><td class="tc">04:11</td></tr>
+      </tbody>
+    </table>
+  </div>
+</section>
+
+<section class="sec">
+  <div class="sec-head"><h2>B　印鑑與帳務處理</h2><span class="tag">4 題</span></div>
+  <div class="tbl">
+    <table>
+      <thead><tr><th>#</th><th>考點</th><th>正確答案</th><th>時間</th></tr></thead>
+      <tbody>
+        <tr><td class="num">06</td><td class="topic">存款留存<strong>印鑑</strong></td><td class="ans"><span class="x">✗</span> 錯誤選項：「存戶一定要留存自己的印鑑式樣」<br>並非硬性規定，可用其他方式辦理</td><td class="tc">01:35</td></tr>
+        <tr><td class="num">07</td><td class="topic">存款郵寄<span class="unsure">〔?結清〕</span>金額</td><td class="ans"><strong>10 萬元</strong></td><td class="tc">02:01</td></tr>
+        <tr><td class="num">10</td><td class="topic"><strong>入錯帳</strong>時金融機構的協助項目</td><td class="ans"><span class="x">✗</span> <strong>不包括</strong>代為報警處理</td><td class="tc">02:33</td></tr>
+        <tr><td class="num">24</td><td class="topic">支票存款戶<strong>更名後</strong>留存印鑑</td><td class="ans">應留存<strong>新印鑑</strong><br><span class="x">✗</span> 錯誤選項：沿用變更前的舊印鑑</td><td class="tc">05:54</td></tr>
+      </tbody>
+    </table>
+  </div>
+</section>
+
+<section class="sec">
+  <div class="sec-head"><h2>C　票據：退票、平行線、掛失止付</h2><span class="tag">5 題</span></div>
+  <div class="tbl">
+    <table>
+      <thead><tr><th>#</th><th>考點</th><th>正確答案</th><th>時間</th></tr></thead>
+      <tbody>
+        <tr><td class="num">08</td><td class="topic">退票後<span class="unsure">〔?清償贖回〕</span>註記的期間</td><td class="ans"><strong>6 個月</strong></td><td class="tc">02:07</td></tr>
+        <tr><td class="num">09</td><td class="topic">票據<strong>平行線</strong>之撤銷</td><td class="ans">限<strong>發票人</strong>為之<br><span class="x">✗</span> 背書人<strong>不可以</strong>撤銷平行線</td><td class="tc">02:19</td></tr>
+        <tr><td class="num">20</td><td class="topic"><strong>掛失止付通知書</strong>何時寄達</td><td class="ans"><strong>當日</strong>票據交換時間前送達<br><span class="x">✗</span> 錯誤選項：隔天</td><td class="tc">05:00</td></tr>
+        <tr><td class="num">22</td><td class="topic">掛失止付通知書與票據<strong>不相符</strong></td><td class="ans"><strong>票號</strong>不同 → 可照付<br><strong>金額相同</strong> → <strong>應予照付</strong>（屬掛錯張）</td><td class="tc">05:24</td></tr>
+        <tr><td class="num">23</td><td class="topic">掛失止付後續程序</td><td class="ans">提出後 <strong>5 日內</strong>辦理<strong>公示催告</strong><br><span class="x">✗</span> 錯誤選項：業經合法提示之票據不需留存票款<br>（合法提示<strong>要</strong>留存票款）</td><td class="tc">05:42</td></tr>
+      </tbody>
+    </table>
+  </div>
+</section>
+
+<section class="sec">
+  <div class="sec-head"><h2>D　開戶資格與限制</h2><span class="tag">7 題</span></div>
+  <div class="tbl">
+    <table>
+      <thead><tr><th>#</th><th>考點</th><th>正確答案</th><th>時間</th></tr></thead>
+      <tbody>
+        <tr><td class="num">11</td><td class="topic">未成年開立活期綜合存款戶，父歿母改嫁時的<strong>法定代理人順序</strong></td><td class="ans"><span class="x">✗</span> 錯誤選項：直接找其祖母<br>須依順序認定，不能跳過</td><td class="tc">02:57</td></tr>
+        <tr><td class="num">12</td><td class="topic">自然人開立<strong>支票存款戶</strong>，何者<strong>不受限制</strong></td><td class="ans"><strong>超過 1 個月無往來</strong>者仍可開戶<br>受輔助宣告、監護宣告、破產宣告者<strong>不可</strong>開立</td><td class="tc">03:22</td></tr>
+        <tr><td class="num">13</td><td class="topic">公司戶申請開立支票存款戶</td><td class="ans"><span class="x">✗</span> 錯誤選項：可<span class="unsure">〔?逕以公司籌備處名義〕</span>申請</td><td class="tc">03:46</td></tr>
+        <tr><td class="num">16</td><td class="topic"><strong>限制行為能力人</strong>開戶</td><td class="ans">須由法定代理人代辦，<strong>本人亦應到場</strong></td><td class="tc">04:25</td></tr>
+        <tr><td class="num">17</td><td class="topic">外國自然人僅有護照、無居留證</td><td class="ans"><strong>仍可開戶</strong><br><span class="x">✗</span> 錯誤選項：不能開立存款帳戶</td><td class="tc">04:31</td></tr>
+        <tr><td class="num">18</td><td class="topic">公司戶開戶對象</td><td class="ans"><strong>包括行政法人</strong>（此敘述正確）</td><td class="tc">04:38</td></tr>
+        <tr><td class="num">19</td><td class="topic">聯徵查詢結果 <strong>Z22</strong><span class="unsure">〔?或 G22〕</span>為電子支付帳戶</td><td class="ans"><strong>不可</strong>以此為由拒絕開戶</td><td class="tc">04:43</td></tr>
+      </tbody>
+    </table>
+  </div>
+</section>
+
+<section class="sec">
+  <div class="sec-head"><h2>E　其他</h2><span class="tag">2 題</span></div>
+  <div class="tbl">
+    <table>
+      <thead><tr><th>#</th><th>考點</th><th>正確答案</th><th>時間</th></tr></thead>
+      <tbody>
+        <tr><td class="num">21</td><td class="topic"><strong>贈與稅</strong>免稅額</td><td class="ans">父母、祖父母<strong>各給 244 萬元</strong>均免稅<br>（每一贈與人每年 244 萬元免稅額）</td><td class="tc">05:12</td></tr>
+        <tr><td class="num">—</td><td class="topic">候選人政治獻金專戶開立數量</td><td class="ans"><span class="unsure">〔語音不清，未能辨識答案〕</span></td><td class="tc">02:52</td></tr>
+      </tbody>
+    </table>
+  </div>
+</section>
+
+<section class="sec">
+  <div class="sec-head"><h2>講師特別強調的三個易錯點</h2><span class="tag">重複提醒</span></div>
+  <ol class="key">
+    <li>
+      <div>
+        <h3>「逾期」一律用活存利率</h3>
+        <p>定存逾期提取的逾期期間，按<strong>活期存款</strong>利率單利計息，不是定存牌告利率。講師重複講了兩次。</p>
+      </div>
+    </li>
+    <li>
+      <div>
+        <h3>平行線只有發票人能撤銷</h3>
+        <p>背書人不行。這是常見的錯誤選項。</p>
+      </div>
+    </li>
+    <li>
+      <div>
+        <h3>掛失止付「當日」就要送達</h3>
+        <p>必須在當日票據交換時間前送達，不是隔天。</p>
+      </div>
+    </li>
+  </ol>
+</section>
+
+<section class="sec terms">
+  <div class="sec-head"><h2>辨識可靠度說明</h2><span class="tag">術語還原對照</span></div>
+  <p class="after" style="margin:0 0 1.1rem">本錄音為單人講課、語速快、台灣腔國語，整體辨識品質<strong>優於</strong>保險錄音，但<strong>專業術語仍大量誤判</strong>。以下是經兩次轉錄交叉比對後確認的還原對照：</p>
+  <div class="grid">
+    <div><span class="bad">硬件</span><span class="arrow">→</span><span class="good">印鑑</span></div>
+    <div><span class="bad">官司指揮</span><span class="arrow">→</span><span class="good">掛失止付</span></div>
+    <div><span class="bad">控制追高</span><span class="arrow">→</span><span class="good">公示催告</span></div>
+    <div><span class="bad">平行性</span><span class="arrow">→</span><span class="good">平行線</span></div>
+    <div><span class="bad">改告 / 排高</span><span class="arrow">→</span><span class="good">牌告</span></div>
+    <div><span class="bad">英語照付</span><span class="arrow">→</span><span class="good">應予照付</span></div>
+    <div><span class="bad">年增 / 連針</span><span class="arrow">→</span><span class="good">聯徵</span></div>
+    <div><span class="bad">結業</span><span class="arrow">→</span><span class="good">解約</span></div>
+    <div><span class="bad">記打</span><span class="arrow">→</span><span class="good">寄達</span></div>
+  </div>
+  <p class="after"><strong>仍無法確認</strong>的段落已在逐字稿中以 <span class="unsure">〔?〕</span> 標記，主要集中在 01:17（7 天那題的題目）、02:01（郵寄結清）、02:52（政治獻金專戶）、05:12（二親等相關），共約 6 處。若這幾題重要，建議重聽對應時間點的原始錄音確認。</p>
+</section>
+
+<footer class="foot">
+  <span>重點彙整結束 · 依據 voice_563392.aac</span>
+  <span><a href="存匯考題講解_逐字稿.html">← 回到完整逐字稿</a></span>
+</footer>
+
+</div>
+</body>
+</html>
